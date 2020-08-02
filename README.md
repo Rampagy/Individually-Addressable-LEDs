@@ -20,9 +20,12 @@ The idea is to use 3 different tasks to manage the LEDS.  The tasks are listed b
     - 10ms (100 Hz)
 
 ## Resources
+
 http://socialledge.com/sjsu/index.php/FreeRTOS_Tutorial
+
 https://www.freertos.org/a00125.html
 
 ## Notes
 Use `xTaskCreateStatic` to create a task
+
 Use `vTaskDelayUntil` to schedule task to be run again
