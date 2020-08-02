@@ -1,6 +1,6 @@
 # FreeRTOS Simple Example
 
-Example code using FreeRTOS to control individually addressable LEDs (WS2812).
+Example code using FreeRTOS to control individually addressable LEDs (SK6812).
 
 ## Architecture
 
@@ -24,6 +24,8 @@ The idea is to use 3 different tasks to manage the LEDS.  The tasks are listed b
 http://socialledge.com/sjsu/index.php/FreeRTOS_Tutorial
 
 https://www.freertos.org/a00125.html
+
+https://cdn-shop.adafruit.com/product-files/1138/SK6812+LED+datasheet+.pdf
 
 ## Notes
 Use `xTaskCreateStatic` to create a task
