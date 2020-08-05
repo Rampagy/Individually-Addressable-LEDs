@@ -31,3 +31,5 @@ https://cdn-shop.adafruit.com/product-files/1138/SK6812+LED+datasheet+.pdf
 Use `xTaskCreateStatic` to create a task
 
 Use `vTaskDelayUntil` to schedule task to be run again
+
+Use `uxTaskGetStackHighWaterMark` to see the highest of stack usage
