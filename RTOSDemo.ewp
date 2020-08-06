@@ -1012,7 +1012,7 @@
                 </option>
                 <option>
                     <name>IlinkTrustzoneImportLibraryOut</name>
-                    <state>###Unitialized###</state>
+                    <state>RTOSDemo_import_lib.o</state>
                 </option>
                 <option>
                     <name>OILinkExtraOption</name>
@@ -1082,6 +1082,9 @@
         </file>
         <file>
             <name>$PROJ_DIR$\Common\Minimal\flash.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\Common\Minimal\flash_timer.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\Common\Minimal\GenQTest.c</name>
@@ -1172,13 +1175,7 @@
         <name>$PROJ_DIR$\main.c</name>
     </file>
     <file>
-        <name>$PROJ_DIR$\ParTest.c</name>
-    </file>
-    <file>
         <name>$PROJ_DIR$\readme.txt</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\RegTest.s</name>
     </file>
     <file>
         <name>$PROJ_DIR$\stm32f4xx_it.c</name>

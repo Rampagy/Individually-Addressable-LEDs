@@ -28,8 +28,16 @@ https://www.freertos.org/a00125.html
 https://cdn-shop.adafruit.com/product-files/1138/SK6812+LED+datasheet+.pdf
 
 ## Notes
-Use `xTaskCreateStatic` to create a task
+Use `xTaskCreateStatic` to create a task with the stack in a static location
+
+Use `xTaskCreate` to create a task with the stack in a dynamic location
 
 Use `vTaskDelayUntil` to schedule task to be run again
 
 Use `uxTaskGetStackHighWaterMark` to see the highest of stack usage
+
+Use `taskENTER_CRITICAL` to disable interrupts
+
+Use `taskEXIT_CRITICAL` to re-enable interrupts
+
+Use `portTICK_PERIOD_MS` to determine period of one clock tick/cycle
