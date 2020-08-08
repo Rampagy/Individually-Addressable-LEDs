@@ -1,6 +1,12 @@
 #ifndef LEDS_H
 #define LEDS_H
 
+/* Kernel includes. */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "timers.h"
+#include "semphr.h"
+
 /* Peripheral includes. */
 #include "stm32f4xx_tim.h"
 #include "stm32f4xx_gpio.h"
@@ -10,6 +16,9 @@
 
 /* Defines for the SK6812 LEDs. */
 #define NUMBER_OF_LEDS 144
+
+/* Number of color channels */
+#define COLOR_CHANNELS 3
 
 /* 106 cycles * (1 sec / 84,000,000 cycle ) = 1.26 usec */
 #define CLOCK_THRESH 106
@@ -28,7 +37,7 @@
 
 /* Number of PWM periods to send a whole LED strip.
 Number of LEDs * (Color Channels / LED) * (Bits / Color Channel) */
-#define LED_PERIODS (NUMBER_OF_LEDS * 3 * 8)
+#define LED_PERIODS (NUMBER_OF_LEDS * COLOR_CHANNELS * 8)
 
 /* Total nuumber of periods to send the entire LED strip */
 #define TOTAL_PERIODS (LED_PERIODS + RESET_PERIODS)

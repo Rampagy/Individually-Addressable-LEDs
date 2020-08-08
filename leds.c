@@ -1,13 +1,80 @@
 #include "leds.h"
 
-/* Buffer that holds the LED information. */
-uint8_t volatile ucLeds[148][3];
+/* Buffer that holds the LED information.
+ * Format = [[GRB], [GRB], ...] */
+uint8_t volatile ucLeds[NUMBER_OF_LEDS][COLOR_CHANNELS] = {{ 0 }};
 
 /* Buffer that hold the duty cycle information. */
-uint16_t usLedDutyCycleBuffer[TOTAL_PERIODS] = {{ 0 }};
+static uint16_t usLedDutyCycleBuffer[TOTAL_PERIODS] = { 0 };
 
-/* Function used to initialize the PWM stream to the individually addressable
-LEDs. */
+
+/**
+  * @brief  Task that initiates the PWM stream to the individually addressable LEDs.
+  * @note   Executes every 10ms resulting in a 100Hz update rate.
+  * @retval None
+  */
+static void vUpdatedLedStrip( void * pvParameters  )
+{
+    TickType_t xLastWakeTime;
+    const TickType_t xFrequency = 10;
+
+    /* Initialize the xLastWakeTime variable with the current time. */
+     xLastWakeTime = xTaskGetTickCount();
+
+     /* Create variable to hold the buffer index. */
+     uint16_t usBufferIndex = 0;
+
+    do {
+        usBufferIndex = 0;
+
+        /* Fill transmit buffer with correct compare values to achieve the
+        correct pulse widths according to color values */
+        for (uint16_t usI = 0; usI < NUMBER_OF_LEDS; usI++)
+        {
+            for (uint8_t ucJ = 0; ucJ < COLOR_CHANNELS; ucJ++)
+            {
+                for (uint8_t ucK = 0; ucK < 8; ucK++)
+                {
+                    uint8_t ucBit = ( ucLeds[usI][ucJ] & (0x80 >> ucK) ) >> (7 - ucK);
+                    usLedDutyCycleBuffer[usBufferIndex] = LOW_THRESH + ucBit * ( (uint16_t)HIGH_THRESH - LOW_THRESH );
+                    usBufferIndex++;
+                }
+            }
+        }
+
+        /* Set TIM4 CNT so an interrupt occurs to transfer the first byte. */
+        TIM4->CNT = CLOCK_THRESH-1;
+
+        /* Reset the pin used for transferring data. */
+        GPIOB->ODR &= ~(0x01<<6);
+
+        /* Clear the DMA flags. */
+        DMA_ClearFlag(DMA1_Stream0,DMA_FLAG_TCIF0);
+        DMA_ClearFlag(DMA1_Stream0,DMA_FLAG_HTIF0);
+        DMA_ClearFlag(DMA1_Stream0,DMA_FLAG_FEIF0);
+
+        /* Set the number of bytes to be transferred */
+        DMA1_Stream0->NDTR = TOTAL_PERIODS;
+
+        /* Start the DMA peripheral. */
+        DMA_Cmd(DMA1_Stream0,ENABLE);
+
+        /* Start the timer used for generating the PWM. */
+        TIM_Cmd(TIM4,ENABLE);
+
+        /* Wait for the next cycle. */
+         vTaskDelayUntil( &xLastWakeTime, xFrequency );
+    } while ( 1 );
+}
+/*-----------------------------------------------------------*/
+
+
+
+/**
+  * @brief  Initialize the PWM stream to the individually addressable LEDs.
+  * @param  None
+  * @retval None
+  */
 void vInitLeds(void)
 {
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
@@ -86,10 +153,10 @@ void vInitLeds(void)
 
     NVIC_Init(&NVIC_InitStructure);
 
-    /* Set interrupt on every completion of pulse.  I believe it's used to
+    /* Set interrupt on every completion of pulse.  I believe this is used to
     initiate the DMA transfer for the next byte (LED duty cycle).  There is no
     actual interrupt code implemented.  I believe it's used purely for
-    initiating the DMA transfer of the next byte) */
+    initiating the DMA transfer of the next byte. */
     NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn ;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
