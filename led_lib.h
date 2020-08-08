@@ -1,10 +1,10 @@
 #ifndef LED_Lib_H
 #define LED_Lib_H
 
-#include "stdint.h"
-#include "stdio.h"
-#include "math.h"
-#include <stdbool.h>
+//#include "stdint.h"
+//#include "stdio.h"
+//#include "math.h"
+//#include <stdbool.h>
 #include "stm32f4xx_tim.h"
 #include "stm32f4xx_gpio.h"
 #include "stm32f4xx_dma.h"
@@ -30,7 +30,7 @@ void fillStrip( uint8_t R, uint8_t G, uint8_t B);
 void generateRamp(uint32_t start, uint32_t len, bool ramp, uint8_t R, uint8_t G,uint8_t B);
 void crossfade(int start, int len, bool ramp, uint8_t R, uint8_t G,uint8_t B);
   void colorMixLED(int LED,  uint8_t R, uint8_t G,uint8_t B, uint8_t percent);
-    
+
 void updateStrand();
 
 void LEDS_Init(void);

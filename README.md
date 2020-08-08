@@ -19,6 +19,24 @@ The idea is to use 3 different tasks to manage the LEDS.  The tasks are listed b
         - Initiates PWM pulse train via DMA for the duty cycle of each period
     - 10ms (100 Hz)
 
+## Peripherals
+
+#### Timers
+
+```
+Timer 4: LED Data Line
+```
+
+#### GPIO:
+
+```
+B6: LED Data
+D12: LED4 (GRN)
+D13: LED3 (ORG)
+D14: LED5 (RED)
+D15: LED6 (BLU)
+```
+
 ## Resources
 
 http://socialledge.com/sjsu/index.php/FreeRTOS_Tutorial
