@@ -8,6 +8,7 @@
 #include "semphr.h"
 
 /* Peripheral includes. */
+#include "stm32f4_discovery.h"
 #include "stm32f4xx_tim.h"
 #include "stm32f4xx_gpio.h"
 #include "stm32f4xx_dma.h"
@@ -42,7 +43,10 @@ Number of LEDs * (Color Channels / LED) * (Bits / Color Channel) */
 /* Total nuumber of periods to send the entire LED strip */
 #define TOTAL_PERIODS (LED_PERIODS + RESET_PERIODS)
 
-/* Function prototypes. */
-void vInitLeds(void);
+/* Function for initializing the hardware to talk to the LEDs. */
+void vInitLeds( void );
+
+/* Task for updating the LED strip. */
+void vUpdatedLedStrip( void * );
 
 #endif

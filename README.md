@@ -32,7 +32,7 @@ Timer 4: LED Data Line
 ```
 B6: LED Data
 D12: LED4 (GRN)
-D13: LED3 (ORG)
+D13: LED3 (ORG) - Indicates stack overflow for vUpdatedLedStrip
 D14: LED5 (RED)
 D15: LED6 (BLU)
 ```

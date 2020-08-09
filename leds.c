@@ -7,14 +7,18 @@ uint8_t volatile ucLeds[NUMBER_OF_LEDS][COLOR_CHANNELS] = {{ 0 }};
 /* Buffer that hold the duty cycle information. */
 static uint16_t usLedDutyCycleBuffer[TOTAL_PERIODS] = { 0 };
 
+/* Task Handle. */
+TaskHandle_t xUpdateLedsHandle = NULL;
+
 
 /**
   * @brief  Task that initiates the PWM stream to the individually addressable LEDs.
   * @note   Executes every 10ms resulting in a 100Hz update rate.
   * @retval None
   */
-static void vUpdatedLedStrip( void * pvParameters  )
+void vUpdatedLedStrip( void * pvParameters  )
 {
+    UBaseType_t xAvailableStack = 0;
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = 10;
 
@@ -62,12 +66,46 @@ static void vUpdatedLedStrip( void * pvParameters  )
         /* Start the timer used for generating the PWM. */
         TIM_Cmd(TIM4,ENABLE);
 
+        /* Check the stack size. */
+        xAvailableStack = uxTaskGetStackHighWaterMark( xUpdateLedsHandle );
+
+        if (xAvailableStack <= 10)
+        {
+            /* Turn orangle LED on if stack overflow is imminent/detected. */
+            STM_EVAL_LEDOn( LED3 );
+        }
+
         /* Wait for the next cycle. */
          vTaskDelayUntil( &xLastWakeTime, xFrequency );
     } while ( 1 );
 }
 /*-----------------------------------------------------------*/
 
+/**
+  * @brief  Interrupt to handle the end of the DMA stream to the LEDs.
+  * @param  None
+  * @retval None
+  */
+void DMA1_Stream0_IRQHandler()
+{
+    if(DMA_GetFlagStatus(DMA1_Stream0, DMA_FLAG_TCIF0))
+    {
+        /* Disable timer 4 */
+        TIM_Cmd(TIM4, DISABLE);
+
+        /* Disable DMA stream 0 */
+        DMA_Cmd(DMA1_Stream0, DISABLE);
+
+        /* Reset the B6 pin to off. */
+        GPIOB->ODR &= ~(0x01 << 6);
+
+        /* Clear DMA interrupt flags */
+        DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF0);
+        DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_HTIF0);
+        DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_FEIF0);
+    }
+}
+/*-----------------------------------------------------------*/
 
 
 /**
@@ -82,6 +120,10 @@ void vInitLeds(void)
     GPIO_InitTypeDef GPIO_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
+    //NVIC_InitTypeDef NVIC_InitStructure1;
+
+    /* Initialize LED3 built into the starter kit */
+    STM_EVAL_LEDInit( LED3 );
 
     /* Enable the clock used for DMA. */
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
@@ -93,7 +135,7 @@ void vInitLeds(void)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN; // used to be pull up
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
@@ -157,14 +199,14 @@ void vInitLeds(void)
     initiate the DMA transfer for the next byte (LED duty cycle).  There is no
     actual interrupt code implemented.  I believe it's used purely for
     initiating the DMA transfer of the next byte. */
-    NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn ;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    //NVIC_InitStructure1.NVIC_IRQChannel = TIM4_IRQn ;
+    //NVIC_InitStructure1.NVIC_IRQChannelPreemptionPriority = 0;
+    //NVIC_InitStructure1.NVIC_IRQChannelSubPriority = 0;
+    //NVIC_InitStructure1.NVIC_IRQChannelCmd = ENABLE;
 
-    NVIC_Init(&NVIC_InitStructure);
+    //NVIC_Init(&NVIC_InitStructure1);
 
-    RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG,ENABLE);
+    //RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG,ENABLE);
     //RNG_Cmd(ENABLE); // RNG_GetRandomNumber(void)
 }
 /*-----------------------------------------------------------*/

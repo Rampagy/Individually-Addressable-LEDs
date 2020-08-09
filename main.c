@@ -41,21 +41,24 @@
 #include "stm32f4xx_conf.h"
 
 /* Priorities for the demo application tasks. */
-#define mainLED_TASK_PRIORITY                  ( tskIDLE_PRIORITY + 1UL )
+#define mainLED_TASK_PRIORITY                   ( tskIDLE_PRIORITY + 1UL )
+#define mainUPDATE_LEDS_PRIORTY                 ( tskIDLE_PRIORITY + 3UL )
 
-/*-----------------------------------------------------------*/
 
+/* Function prototypes. */
 static void vLed3ToggleTask( void * pvParameters  );
 static void vLed4ToggleTask( void * pvParameters  );
 static void vLed5ToggleTask( void * pvParameters  );
 static void vLed6ToggleTask( void * pvParameters  );
+
+/* Task Handles. */
+extern TaskHandle_t xUpdateLedsHandle;
 
 /*-----------------------------------------------------------*/
 
 int main(void)
 {
     /* Initialize all four LEDs built into the starter kit */
-    STM_EVAL_LEDInit( LED3 );
     STM_EVAL_LEDInit( LED4 );
     STM_EVAL_LEDInit( LED5 );
     STM_EVAL_LEDInit( LED6 );
@@ -65,10 +68,10 @@ int main(void)
 
     /* Spawn the tasks. */
     /*           Task,                  Task Name,       Stack Size,                      parameters,         priority,                    task handle */
-    xTaskCreate( vLed3ToggleTask,       "LEDx",          configMINIMAL_STACK_SIZE,        NULL,               mainLED_TASK_PRIORITY,       ( TaskHandle_t * ) NULL );
     xTaskCreate( vLed4ToggleTask,       "LEDx",          configMINIMAL_STACK_SIZE,        NULL,               mainLED_TASK_PRIORITY,       ( TaskHandle_t * ) NULL );
     xTaskCreate( vLed5ToggleTask,       "LEDx",          configMINIMAL_STACK_SIZE,        NULL,               mainLED_TASK_PRIORITY,       ( TaskHandle_t * ) NULL );
     xTaskCreate( vLed6ToggleTask,       "LEDx",          configMINIMAL_STACK_SIZE,        NULL,               mainLED_TASK_PRIORITY,       ( TaskHandle_t * ) NULL );
+    xTaskCreate( vUpdatedLedStrip,      "UpdateLeds",    configMINIMAL_STACK_SIZE,        NULL,               mainUPDATE_LEDS_PRIORTY,     &xUpdateLedsHandle );
 
     /* Start the scheduler. */
     vTaskStartScheduler();
@@ -79,28 +82,6 @@ int main(void)
     to be created.  See the memory management section on the FreeRTOS web site
     for more details. */
     for( ;; );
-}
-/*-----------------------------------------------------------*/
-
-static void vLed3ToggleTask( void * pvParameters  )
-{
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = 125;
-
-    /* Initialize the xLastWakeTime variable with the current time. */
-     xLastWakeTime = xTaskGetTickCount();
-
-     /* Your code goes here */
-     STM_EVAL_LEDToggle(LED3);
-
-    while ( 1 )
-    {
-        // Wait for the next cycle.
-         vTaskDelayUntil( &xLastWakeTime, xFrequency );
-
-        /* Your code goes here */
-        STM_EVAL_LEDToggle(LED3);
-    }
 }
 /*-----------------------------------------------------------*/
 
