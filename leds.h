@@ -22,13 +22,13 @@
 #define COLOR_CHANNELS 3
 
 /* 106 cycles * (1 sec / 84,000,000 cycle ) = 1.26 usec */
-#define CLOCK_THRESH 106
+#define CLOCK_THRESH (106 - 1)
 
 /* 25 cycles * (1 sec / 84,000,000 cycles) = 0.298 usec */
-#define LOW_THRESH 25
+#define LOW_THRESH (25 - 1)
 
 /* 50 cycles * (1 sec / 84,000,000 cycles) = 0.595 usec*/
-#define HIGH_THRESH 50
+#define HIGH_THRESH (50 - 1)
 
 /* 6720 cycles * (1 sec / 84,000,000 cycles) = 80.0 usec */
 #define RESET_CYCLES 6720

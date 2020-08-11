@@ -32,6 +32,7 @@
 #include "semphr.h"
 
 /* Project includes. */
+#include "system_stm32f4xx.h"
 #include "leds.h"
 
 /* Hardware and starter kit includes. */
@@ -46,7 +47,6 @@
 
 
 /* Function prototypes. */
-static void vLed3ToggleTask( void * pvParameters  );
 static void vLed4ToggleTask( void * pvParameters  );
 static void vLed5ToggleTask( void * pvParameters  );
 static void vLed6ToggleTask( void * pvParameters  );
@@ -58,6 +58,9 @@ extern TaskHandle_t xUpdateLedsHandle;
 
 int main(void)
 {
+    /* */
+    SystemCoreClockUpdate();
+
     /* Initialize all four LEDs built into the starter kit */
     STM_EVAL_LEDInit( LED4 );
     STM_EVAL_LEDInit( LED5 );
