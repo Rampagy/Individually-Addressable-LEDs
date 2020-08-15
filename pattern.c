@@ -11,9 +11,9 @@ TaskHandle_t xCreatePatternHandle = NULL;
   */
 void vCreatePattern( void * pvParameters  )
 {
-    UBaseType_t xAvailableStack = 0;
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = 50;
+    UBaseType_t xAvailableStack = 0;
 
     /* Initialize the xLastWakeTime variable with the current time. */
     xLastWakeTime = xTaskGetTickCount();
@@ -29,15 +29,17 @@ void vCreatePattern( void * pvParameters  )
         default:
         case OFF:
             /* Turn LEDs off and immediately go to the next pattern. */
-            vTurnLedsOff();
+            vFillStrip( 0, 0, 0 );
 
             eCurrentPattern = RGB_RAMP;
             usPatternCount = 0;
             break;
 
         case RGB_RAMP:
-            usPatternCount += portTICK_PERIOD_MS;
+            /* Ramp from one color to the next. */
+            vRainbowCrossfade();
 
+            usPatternCount += portTICK_PERIOD_MS;
             if ( usPatternCount >= configRGB_RAMP_TIME_MS )
             {
                 /* Switch to the new pattern and reset the counter */
@@ -64,16 +66,89 @@ void vCreatePattern( void * pvParameters  )
 
 
 /**
-  * @brief  Turns all LEDS off.
+  * @brief  Crossfades between the RGB colors.
   * @retval None
   */
-void vTurnLedsOff( void )
+void vRainbowCrossfade( void )
 {
-    for (uint16_t usI = 0; usI < NUMBER_OF_LEDS; usI++)
+    static colors_t eColor = RED;
+
+    switch (eColor)
     {
-        for (uint8_t ucJ = 0; ucJ < COLOR_CHANNELS; ucJ++)
-        {
-            ucLeds[usI][ucJ] = 0;
-        }
+    case RED:
+        vFillStrip( 255, 0, 0 );
+        break;
     }
 }
+/*-----------------------------------------------------------*/
+
+
+/**
+  * @brief  Crossfades between the RGB colors.
+  * @retval None
+  */
+/*void vCrossfade( uint16_t start, uint16_t len, bool ramp, uint8_t R, uint8_t G,uint8_t B )
+{
+    uint32_t counter = 0;
+    if( ramp )
+    {
+        for( int i = start + len; i > start; i-- )
+        {
+            setLED(i,
+                   getLED(i, RED)* (counter)/len+R*(len-counter)/len,
+                   getLED(i, GRN)* (counter)/len+G*(len-counter)/len,
+                   getLED(i, BLU)* (counter)/len+B*(len-counter)/len);
+            counter++;
+        }
+    }
+    else
+    {
+        for( int i = start; i < ( start + len ); i++ )
+        {
+            setLED(i,
+                   getLED(i, RED)* (counter)/len+R*(len-counter)/len,
+                   getLED(i, GRN)* (counter)/len+G*(len-counter)/len,
+                   getLED(i, BLU)* (counter)/len+B*(len-counter)/len);
+            counter++;
+        }
+    }
+}*/
+/*-----------------------------------------------------------*/
+
+
+/**
+  * @brief  Fill the entire strip with color.
+  * @retval None
+  */
+void vFillStrip( uint8_t R, uint8_t G, uint8_t B )
+{
+    for( uint16_t i = 0; i < NUMBER_OF_LEDS; i++ )
+    {
+        vSetLed(i, R, G, B);
+    }
+}
+/*-----------------------------------------------------------*/
+
+
+/**
+  * @brief  Sets the RGB value for an led.
+  * @retval None
+  */
+void vSetLed( uint16_t LED, uint8_t R, uint8_t G, uint8_t B )
+{
+    ucLeds[LED][GRN] = G;
+    ucLeds[LED][RED] = R;
+    ucLeds[LED][BLU] = B;
+}
+/*-----------------------------------------------------------*/
+
+
+/**
+  * @brief  Gets the the color channel brightness.
+  * @retval Color channel brightness.
+  */
+uint8_t ucGetLed( uint16_t LED, uint8_t color )
+{
+    return ucLeds[LED][color];
+}
+/*-----------------------------------------------------------*/

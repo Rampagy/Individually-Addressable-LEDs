@@ -21,13 +21,30 @@ typedef enum {
     RGB_RAMP
 } patterns_t;
 
+
+typedef enum {
+    GRN,
+    RED,
+    BLU
+} colors_t;
+
+
 /*-----------------------------------------------------------*/
 
 /* Task for creating patterns for the LED strip. */
 void vCreatePattern( void * );
 
-/* function for turning all Leds off. */
-void vTurnLedsOff( void );
+/* Fill the strip with a color. */
+void vFillStrip( uint8_t R, uint8_t G, uint8_t B );
+
+/* Set a single led. */
+void vSetLed( uint16_t LED, uint8_t R, uint8_t G, uint8_t B );
+
+/* Get led color channel. */
+uint8_t ucGetLed( uint16_t LED, uint8_t color );
+
+/* Cross fade between the rainbow colors.  */
+void vRainbowCrossfade( void );
 
 /*-----------------------------------------------------------*/
 

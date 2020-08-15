@@ -18,9 +18,9 @@ TaskHandle_t xUpdateLedsHandle = NULL;
   */
 void vUpdateLedStrip( void * pvParameters  )
 {
-    UBaseType_t xAvailableStack = 0;
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = 10;
+    UBaseType_t xAvailableStack = 0;
 
     /* Initialize the xLastWakeTime variable with the current time. */
      xLastWakeTime = xTaskGetTickCount();
