@@ -1,11 +1,12 @@
 #include "pattern.h"
 
-/* Task Handle. */
+/* Task handle. */
 TaskHandle_t xCreatePatternHandle = NULL;
 
 /**
-  * @brief  Task that initiates the PWM stream to the individually addressable LEDs.
-  * @note   Executes every 10ms resulting in a 100Hz update rate.
+  * @brief  Task chooses pattern and calculates the colors.
+  * @note   Executes every 50ms.
+        Might increase/decrease the rate depending on CPU usage.
   * @retval None
   */
 void vCreatePattern( void * pvParameters  )
@@ -17,8 +18,35 @@ void vCreatePattern( void * pvParameters  )
     /* Initialize the xLastWakeTime variable with the current time. */
     xLastWakeTime = xTaskGetTickCount();
 
+    /* Local variable for calculating the pattern. */
+    patterns_t eCurrentPattern = OFF;
+    uint16_t usPatternCount = 0;
+
     while ( 1 )
     {
+        switch ( eCurrentPattern )
+        {
+        default:
+        case OFF:
+            /* Turn LEDs off and immediately go to the next pattern. */
+            vTurnLedsOff();
+
+            eCurrentPattern = RGB_RAMP;
+            usPatternCount = 0;
+            break;
+
+        case RGB_RAMP:
+            usPatternCount += portTICK_PERIOD_MS;
+
+            if ( usPatternCount >= configRGB_RAMP_TIME_MS )
+            {
+                /* Switch to the new pattern and reset the counter */
+                eCurrentPattern = RGB_RAMP;
+                usPatternCount = 0;
+            }
+            break;
+        }
+
         /* Check the stack size. */
         xAvailableStack = uxTaskGetStackHighWaterMark( xCreatePatternHandle );
 
@@ -30,5 +58,22 @@ void vCreatePattern( void * pvParameters  )
 
         /* Wait for the next cycle. */
         vTaskDelayUntil( &xLastWakeTime, xFrequency );
+    }
+}
+/*-----------------------------------------------------------*/
+
+
+/**
+  * @brief  Turns all LEDS off.
+  * @retval None
+  */
+void vTurnLedsOff( void )
+{
+    for (uint16_t usI = 0; usI < NUMBER_OF_LEDS; usI++)
+    {
+        for (uint8_t ucJ = 0; ucJ < COLOR_CHANNELS; ucJ++)
+        {
+            ucLeds[usI][ucJ] = 0;
+        }
     }
 }

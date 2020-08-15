@@ -2,12 +2,12 @@
 
 /* Buffer that holds the LED information.   *
  * Format = [[GRB], [GRB], ...]             */
-uint8_t volatile ucLeds[NUMBER_OF_LEDS][COLOR_CHANNELS] = {{ 0 }};
+volatile uint8_t ucLeds[NUMBER_OF_LEDS][COLOR_CHANNELS] = {{ 0 }};
 
 /* Buffer that hold the duty cycle information. */
 static uint16_t usLedDutyCycleBuffer[TOTAL_PERIODS] = { 0 };
 
-/* Task Handle. */
+/* Task handle. */
 TaskHandle_t xUpdateLedsHandle = NULL;
 
 
