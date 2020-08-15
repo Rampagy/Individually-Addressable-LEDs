@@ -1616,6 +1616,12 @@
         <name>$PROJ_DIR$\main.c</name>
     </file>
     <file>
+        <name>$PROJ_DIR$\pattern.c</name>
+    </file>
+    <file>
+        <name>$PROJ_DIR$\pattern.h</name>
+    </file>
+    <file>
         <name>$PROJ_DIR$\readme.txt</name>
     </file>
     <file>

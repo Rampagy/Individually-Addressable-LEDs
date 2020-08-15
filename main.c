@@ -34,6 +34,7 @@
 /* Project includes. */
 #include "system_stm32f4xx.h"
 #include "leds.h"
+#include "pattern.h"
 
 /* Hardware and starter kit includes. */
 #include "arm_comm.h"
@@ -41,28 +42,28 @@
 #include "stm32f4xx.h"
 #include "stm32f4xx_conf.h"
 
-/* Priorities for the demo application tasks. */
-#define mainLED_TASK_PRIORITY                   ( tskIDLE_PRIORITY + 1UL )
-#define mainUPDATE_LEDS_PRIORTY                 ( tskIDLE_PRIORITY + 3UL )
+/* Priorities for the demo application tasks (higher numbers preempt lower numbers) */
+#define mainUPDATE_LEDS_PRIORITY                ( tskIDLE_PRIORITY + 2UL )
+#define mainCREATE_PATTERN_PRIORITY             ( tskIDLE_PRIORITY + 1UL )
 
-
-/* Function prototypes. */
-static void vLed4ToggleTask( void * pvParameters  );
-static void vLed5ToggleTask( void * pvParameters  );
-static void vLed6ToggleTask( void * pvParameters  );
+/* Task stack sizes. */
+#define configUPDATE_LEDS_STACK_SIZE            configMINIMAL_STACK_SIZE
+#define configCREATE_PATTERN_STACK_SIZE         configMINIMAL_STACK_SIZE
 
 /* Task Handles. */
 extern TaskHandle_t xUpdateLedsHandle;
+extern TaskHandle_t xCreatePatternHandle;
 
 /*-----------------------------------------------------------*/
 
 int main(void)
 {
-    /* */
+    /* Update the MCU and peripheral clock frequencies */
     SystemCoreClockUpdate();
 
     /* Initialize all four LEDs built into the starter kit */
-    STM_EVAL_LEDInit( LED4 );
+    STM_EVAL_LEDInit( LED3 );       // Update LEDs stack overflow (ORG)
+    STM_EVAL_LEDInit( LED4 );       // Create Pattern stack overflow (GRN)
     STM_EVAL_LEDInit( LED5 );
     STM_EVAL_LEDInit( LED6 );
 
@@ -70,11 +71,9 @@ int main(void)
     vInitLeds();
 
     /* Spawn the tasks. */
-    /*           Task,                  Task Name,       Stack Size,                      parameters,         priority,                    task handle */
-    xTaskCreate( vLed4ToggleTask,       "LEDx",          configMINIMAL_STACK_SIZE,        NULL,               mainLED_TASK_PRIORITY,       ( TaskHandle_t * ) NULL );
-    xTaskCreate( vLed5ToggleTask,       "LEDx",          configMINIMAL_STACK_SIZE,        NULL,               mainLED_TASK_PRIORITY,       ( TaskHandle_t * ) NULL );
-    xTaskCreate( vLed6ToggleTask,       "LEDx",          configMINIMAL_STACK_SIZE,        NULL,               mainLED_TASK_PRIORITY,       ( TaskHandle_t * ) NULL );
-    xTaskCreate( vUpdatedLedStrip,      "UpdateLeds",    configMINIMAL_STACK_SIZE,        NULL,               mainUPDATE_LEDS_PRIORTY,     &xUpdateLedsHandle );
+    /*           Task,                  Task Name,          Stack Size,                             parameters,     priority,                           task handle */
+    xTaskCreate( vUpdateLedStrip,       "UpdateLeds",       configUPDATE_LEDS_STACK_SIZE,           NULL,           mainUPDATE_LEDS_PRIORITY,            &xUpdateLedsHandle );
+    xTaskCreate( vCreatePattern,        "CreatePattern",    configCREATE_PATTERN_STACK_SIZE,        NULL,           mainCREATE_PATTERN_PRIORITY,        &xCreatePatternHandle );
 
     /* Start the scheduler. */
     vTaskStartScheduler();
@@ -84,73 +83,6 @@ int main(void)
     insufficient FreeRTOS heap memory available for the idle and/or timer tasks
     to be created.  See the memory management section on the FreeRTOS web site
     for more details. */
-    for( ;; );
-}
-/*-----------------------------------------------------------*/
-
-static void vLed4ToggleTask( void * pvParameters  )
-{
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = 250;
-
-    /* Initialize the xLastWakeTime variable with the current time. */
-     xLastWakeTime = xTaskGetTickCount();
-
-     /* Your code goes here */
-     STM_EVAL_LEDToggle(LED4);
-
-    while ( 1 )
-    {
-        // Wait for the next cycle.
-        vTaskDelayUntil( &xLastWakeTime, xFrequency );
-
-        /* Your code goes here */
-        STM_EVAL_LEDToggle(LED4);
-    }
-}
-/*-----------------------------------------------------------*/
-
-static void vLed5ToggleTask( void * pvParameters  )
-{
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = 500;
-
-    /* Initialize the xLastWakeTime variable with the current time. */
-     xLastWakeTime = xTaskGetTickCount();
-
-     /* Your code goes here */
-     STM_EVAL_LEDToggle(LED5);
-
-    while ( 1 )
-    {
-        // Wait for the next cycle.
-        vTaskDelayUntil( &xLastWakeTime, xFrequency );
-
-        /* Your code goes here */
-        STM_EVAL_LEDToggle(LED5);
-    }
-}
-/*-----------------------------------------------------------*/
-
-static void vLed6ToggleTask( void * pvParameters  )
-{
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = 1000;
-
-    /* Initialize the xLastWakeTime variable with the current time. */
-     xLastWakeTime = xTaskGetTickCount();
-
-     /* Your code goes here */
-     STM_EVAL_LEDToggle(LED6);
-
-    while ( 1 )
-    {
-        // Wait for the next cycle.
-        vTaskDelayUntil( &xLastWakeTime, xFrequency );
-
-
-        /* Your code goes here */
-        STM_EVAL_LEDToggle(LED6);
-    }
+    while ( 1 );
 }
 /*-----------------------------------------------------------*/

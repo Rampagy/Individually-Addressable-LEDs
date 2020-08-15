@@ -1,7 +1,7 @@
 #include "leds.h"
 
-/* Buffer that holds the LED information.
- * Format = [[GRB], [GRB], ...] */
+/* Buffer that holds the LED information.   *
+ * Format = [[GRB], [GRB], ...]             */
 uint8_t volatile ucLeds[NUMBER_OF_LEDS][COLOR_CHANNELS] = {{ 0 }};
 
 /* Buffer that hold the duty cycle information. */
@@ -16,7 +16,7 @@ TaskHandle_t xUpdateLedsHandle = NULL;
   * @note   Executes every 10ms resulting in a 100Hz update rate.
   * @retval None
   */
-void vUpdatedLedStrip( void * pvParameters  )
+void vUpdateLedStrip( void * pvParameters  )
 {
     UBaseType_t xAvailableStack = 0;
     TickType_t xLastWakeTime;
@@ -28,7 +28,8 @@ void vUpdatedLedStrip( void * pvParameters  )
      /* Create variable to hold the buffer index. */
      uint16_t usBufferIndex = 0;
 
-    do {
+    while ( 1 )
+    {
         usBufferIndex = 0;
 
         /* Fill transmit buffer with correct compare values to achieve the
@@ -61,10 +62,10 @@ void vUpdatedLedStrip( void * pvParameters  )
         DMA1_Stream0->NDTR = TOTAL_PERIODS;
 
         /* Start the DMA peripheral. */
-        DMA_Cmd(DMA1_Stream0,ENABLE);
+        DMA_Cmd(DMA1_Stream0, ENABLE);
 
         /* Start the timer used for generating the PWM. */
-        TIM_Cmd(TIM4,ENABLE);
+        TIM_Cmd(TIM4, ENABLE);
 
         /* Check the stack size. */
         xAvailableStack = uxTaskGetStackHighWaterMark( xUpdateLedsHandle );
@@ -77,7 +78,7 @@ void vUpdatedLedStrip( void * pvParameters  )
 
         /* Wait for the next cycle. */
          vTaskDelayUntil( &xLastWakeTime, xFrequency );
-    } while ( 1 );
+    }
 }
 /*-----------------------------------------------------------*/
 
@@ -120,10 +121,6 @@ void vInitLeds(void)
     GPIO_InitTypeDef GPIO_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
-    //NVIC_InitTypeDef NVIC_InitStructure1;
-
-    /* Initialize LED3 built into the starter kit */
-    STM_EVAL_LEDInit( LED3 );
 
     /* Enable the clock used for DMA. */
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
@@ -136,7 +133,7 @@ void vInitLeds(void)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
     /* Connect TIM4 pins to AF */
@@ -194,17 +191,6 @@ void vInitLeds(void)
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 
     NVIC_Init(&NVIC_InitStructure);
-
-    /* Set interrupt on every completion of pulse.  I believe this is used to
-    initiate the DMA transfer for the next byte (LED duty cycle).  There is no
-    actual interrupt code implemented.  I believe it's used purely for
-    initiating the DMA transfer of the next byte. */
-    //NVIC_InitStructure1.NVIC_IRQChannel = TIM4_IRQn ;
-    //NVIC_InitStructure1.NVIC_IRQChannelPreemptionPriority = 0;
-    //NVIC_InitStructure1.NVIC_IRQChannelSubPriority = 0;
-    //NVIC_InitStructure1.NVIC_IRQChannelCmd = ENABLE;
-
-    //NVIC_Init(&NVIC_InitStructure1);
 
     //RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG,ENABLE);
     //RNG_Cmd(ENABLE); // RNG_GetRandomNumber(void)

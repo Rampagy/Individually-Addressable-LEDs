@@ -47,6 +47,6 @@ Number of LEDs * (Color Channels / LED) * (Bits / Color Channel) */
 void vInitLeds( void );
 
 /* Task for updating the LED strip. */
-void vUpdatedLedStrip( void * );
+void vUpdateLedStrip( void * );
 
 #endif

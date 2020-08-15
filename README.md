@@ -8,7 +8,7 @@ The idea is to use 3 different tasks to manage the LEDS.  The tasks are listed b
 
 0.  Idle Task
     -  Does nothing
-1.  Pattern Task 
+1.  Pattern Task
     - State chart to decide what pattern to show
     - 500ms (2 Hz)
 2.  Calculation Task
@@ -31,8 +31,8 @@ Timer 4: LED Data Line
 
 ```
 B6: LED Data
-D12: LED4 (GRN)
-D13: LED3 (ORG) - Indicates stack overflow for vUpdatedLedStrip
+D12: LED4 (GRN) - Indicates stack overflow for vCreatePattern
+D13: LED3 (ORG) - Indicates stack overflow for vUpdateLedStrip
 D14: LED5 (RED)
 D15: LED6 (BLU)
 ```
