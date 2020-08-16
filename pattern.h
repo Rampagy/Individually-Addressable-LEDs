@@ -11,7 +11,12 @@
 #include "leds.h"
 
 /* Project specific defines. */
-#define configRGB_RAMP_TIME_MS                                      ( 1000 )
+#define configPATTERN_TASK_TIME_MS                                  ( 20 )
+#define configRAINBOW_CROSSFADE_TIME_MS                             ( 30000 )
+
+/* Rainbow crossfade defines. */
+#define configRAINBOW_TRANSITION_LENGTH                             ( 30 )
+#define configRAINBOW_RAMP_TIME_MS                                  ( 50 )
 
 /*-----------------------------------------------------------*/
 
@@ -21,7 +26,7 @@ typedef enum {
     RGB_RAMP
 } patterns_t;
 
-
+/* Color Channels */
 typedef enum {
     GRN,
     RED,
@@ -38,13 +43,16 @@ void vCreatePattern( void * );
 void vFillStrip( uint8_t R, uint8_t G, uint8_t B );
 
 /* Set a single led. */
-void vSetLed( uint16_t LED, uint8_t R, uint8_t G, uint8_t B );
+void vSetLed( int16_t LED, uint8_t R, uint8_t G, uint8_t B );
 
 /* Get led color channel. */
-uint8_t ucGetLed( uint16_t LED, uint8_t color );
+uint8_t ucGetLed( int16_t LED, uint8_t color );
 
-/* Cross fade between the rainbow colors.  */
+/* Crossfade between the rainbow colors. */
 void vRainbowCrossfade( void );
+
+/* Calcualte the crossfade operation. */
+void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G,uint8_t B );
 
 /*-----------------------------------------------------------*/
 
