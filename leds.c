@@ -82,6 +82,18 @@ void vUpdateLedStrip( void * pvParameters  )
 }
 /*-----------------------------------------------------------*/
 
+
+/**
+  * @brief  Interrupt to handle the end of the DMA stream to the LEDs.
+  * @param  None
+  * @retval None
+  */
+uint32_t ulGetRandVal( void )
+{
+    return RNG_GetRandomNumber();
+}
+/*-----------------------------------------------------------*/
+
 /**
   * @brief  Interrupt to handle the end of the DMA stream to the LEDs.
   * @param  None
@@ -192,7 +204,10 @@ void vInitLeds(void)
 
     NVIC_Init(&NVIC_InitStructure);
 
-    //RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG,ENABLE);
-    //RNG_Cmd(ENABLE); // RNG_GetRandomNumber(void)
+    /* Initalize the random number generator. */
+    /* Call RNG_GetRandomNumber(void) to get a random number. */
+    RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG,ENABLE);
+    RNG_Cmd(ENABLE);
+
 }
 /*-----------------------------------------------------------*/

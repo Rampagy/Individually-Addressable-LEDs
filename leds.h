@@ -14,6 +14,7 @@
 #include "stm32f4xx_dma.h"
 #include "stm32f4xx_tim.h"
 #include "stm32f4xx_rcc.h"
+#include "stm32f4xx_rng.h"
 
 /* Defines for the SK6812 LEDs. */
 #define NUMBER_OF_LEDS 144
@@ -48,5 +49,8 @@ void vInitLeds( void );
 
 /* Task for updating the LED strip. */
 void vUpdateLedStrip( void * );
+
+/* Function for getting a random number. */
+uint32_t ulGetRandVal( void );
 
 #endif
