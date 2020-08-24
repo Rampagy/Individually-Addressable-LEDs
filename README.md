@@ -4,19 +4,18 @@ Example code using FreeRTOS to control individually addressable LEDs (SK6812).
 
 ## Architecture
 
-The idea is to use 3 different tasks to manage the LEDS.  The tasks are listed below by priority (higher numbers will preempt lower numbers).
+The idea is to use 3 different tasks to manage the LEDS. The tasks are listed below by priority (higher numbers will preempt lower numbers).
 
 0.  Idle Task
     -  Does nothing
 1.  Pattern Task
-    - State chart to decide what pattern to show
-    - 500ms (2 Hz)
-2.  Calculation Task
-    - Calculates the colors to be shown for each pattern
-    - 50ms (20 Hz)
+    - Decides what pattern to show
+    - Calculates RGB color based on selected pattern
+    - 10ms (100 Hz)
 3.  Refresh Task
     - Refreshes the actual colors shown on the LED strip
-        - Initiates PWM pulse train via DMA for the duty cycle of each period
+        - Initiates PWM pulse train
+        - Uses DMA to transfer the duty cycle of each period
     - 10ms (100 Hz)
 
 ## Peripherals
@@ -54,8 +53,8 @@ Use `vTaskDelayUntil` to schedule task to be run again
 
 Use `uxTaskGetStackHighWaterMark` to see the highest of stack usage
 
-Use `taskENTER_CRITICAL` to disable interrupts
+Use `taskENTER_CRITICAL` to disable interrupts and tasks
 
-Use `taskEXIT_CRITICAL` to re-enable interrupts
+Use `taskEXIT_CRITICAL` to re-enable interrupts and tasks
 
 Use `portTICK_PERIOD_MS` to determine period of one clock tick/cycle

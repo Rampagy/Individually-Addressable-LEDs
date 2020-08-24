@@ -101,22 +101,28 @@ uint32_t ulGetRandVal( void )
   */
 void DMA1_Stream0_IRQHandler()
 {
-    if(DMA_GetFlagStatus(DMA1_Stream0, DMA_FLAG_TCIF0))
+    /* Disable interrupts and other tasks from running during this interrupt. */
+    UBaseType_t uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+
+    if( DMA_GetFlagStatus( DMA1_Stream0, DMA_FLAG_TCIF0 ) )
     {
         /* Disable timer 4 */
-        TIM_Cmd(TIM4, DISABLE);
+        TIM_Cmd( TIM4, DISABLE );
 
         /* Disable DMA stream 0 */
-        DMA_Cmd(DMA1_Stream0, DISABLE);
+        DMA_Cmd( DMA1_Stream0, DISABLE );
 
         /* Reset the B6 pin to off. */
-        GPIOB->ODR &= ~(0x01 << 6);
+        GPIOB->ODR &= ~( 0x01 << 6 );
 
         /* Clear DMA interrupt flags */
-        DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF0);
-        DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_HTIF0);
-        DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_FEIF0);
+        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_TCIF0 );
+        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_HTIF0 );
+        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_FEIF0 );
     }
+
+    /* Re-enable interrupts and other tasks. */
+    taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
 }
 /*-----------------------------------------------------------*/
 
