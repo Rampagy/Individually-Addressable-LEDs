@@ -10,17 +10,27 @@
 /* Peripheral includes. */
 #include "leds.h"
 
+/*-----------------------------------------------------------*/
+
 /* Project specific defines. */
 #define configPATTERN_TASK_TIME_MS                                  ( 10 )
 #define configRAINBOW_CROSSFADE_TIME_MS                             ( 60000 )
 #define configAURORA_BOREALIS_TIME_MS                               ( 60000 )
 
+/*-----------------------------------------------------------*/
+
 /* Rainbow crossfade defines. */
 #define configRAINBOW_TRANSITION_LENGTH                             ( 30 )
 #define configRAINBOW_RAMP_TIME_MS                                  ( 50 )
 
+/*-----------------------------------------------------------*/
+
 /* Aurora borealis defines. */
-#define configAURORA_BOREALIS_LENGTH                                ( 30 )
+
+/* Number of aurora's to simultaneously show. */
+#define configAURORA_BOREALIS_LENGTH                                ( 10 )
+
+/* How fast to move the aurora's. */
 #define configAURORA_BOREALIS_DELAY_MS                              ( 50 )
 
 /*-----------------------------------------------------------*/

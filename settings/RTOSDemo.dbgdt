@@ -1167,7 +1167,7 @@
                     <item>usRainbowCount</item>
                     <item>eColor</item>
                     <item>usLedCount</item>
-                    <item></item>
+                    <item />
                 </expressions>
                 <col-names>
                     <item>Expression</item>

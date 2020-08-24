@@ -105,8 +105,10 @@ void vCreatePattern( void * pvParameters  )
   */
 void vAuroraBorealis( const uint32_t usPatternCount )
 {
-    /** @TODO Investigate this more. */
-    static uint16_t usAuroraArray[configAURORA_BOREALIS_LENGTH];
+    /* Number of aurora's simultaneously show. */
+    static int16_t usAuroraArray[configAURORA_BOREALIS_LENGTH];
+
+    /* Aurora color.*/
     static uint16_t usAuroraColors[configAURORA_BOREALIS_LENGTH];
 
     uint16_t usWidth = 20;
@@ -118,7 +120,11 @@ void vAuroraBorealis( const uint32_t usPatternCount )
     {
         for ( uint16_t i = 0; i < configAURORA_BOREALIS_LENGTH; i++ )
         {
-            usAuroraArray[i] = ulGetRandVal() % (2 * NUMBER_OF_LEDS) - 100;
+            /* Pick aurora LEDs. Biased to the end of the strip because this is
+            the last LED in the aurora. */
+            usAuroraArray[i] = ( ulGetRandVal() % (2 * NUMBER_OF_LEDS) ) - (NUMBER_OF_LEDS / 4);
+
+            /* Get some random colors. */
             usAuroraColors[i] = ulGetRandVal() % usColorRange;
         }
     }
@@ -129,32 +135,49 @@ void vAuroraBorealis( const uint32_t usPatternCount )
 
         for ( uint16_t i = 0; i < configAURORA_BOREALIS_LENGTH; i++ )
         {
+            /* Blend LED colors (Green/Blue) via cosine function. */
+            /* LEDs in the center are brighter than the edges. */
+
+            /* These LEDs get brighter towards the end of the strip. */
             vCrossfade(usAuroraArray[i] - 2 * usWidth, usWidth, 1,
                        0,                                                           // R
                        ucGetCos( usAuroraColors[i] + usColorOffset ),               // G
                        ucGetCos( usAuroraColors[i] + 120 + usColorOffset ) / 2 );   // B
 
+            /* These LEDs get dimmer towards the end of the strip. */
             vCrossfade(usAuroraArray[i] - usWidth, usWidth, 0,
                        0,                                                           // R
                        ucGetCos( usAuroraColors[i] + usColorOffset ),               // G
                        ucGetCos( usAuroraColors[i] + 120 + usColorOffset ) / 2 );   // B
 
-            /* Last values in array are in reversed direction. */
             if ( i < ( configAURORA_BOREALIS_LENGTH / 2 ) )
             {
+                /* Move the aurora LED towards the end of the LED strip. */
                 usAuroraArray[i]++;
+
+                /* If we increment off end of the LED strip. */
                 if ( usAuroraArray[i] > ( NUMBER_OF_LEDS + 2 * usWidth ) )
                 {
-                    usAuroraArray[i] = ulGetRandVal() % 100;
+                    /* We know this aurora will work it's way towards the end of
+                    the strip so bias the selection towards the start of the LED
+                    strip. Pick a new aurora start LED in the first 33%.*/
+                    usAuroraArray[i] = ulGetRandVal() % ( NUMBER_OF_LEDS / 3 ) - usWidth;
                     usAuroraColors[i] = ulGetRandVal() % usColorRange;
                 }
             }
             else
             {
+                /* Move the aurora LED towards the start of the LED strip. */
                 usAuroraArray[i]--;
-                if ( usAuroraArray[i] < NUMBER_OF_LEDS )
+
+                /* If we decrement off the beginning of the LED strip. */
+                if ( usAuroraArray[i] < 0 )
                 {
-                    usAuroraArray[i] = NUMBER_OF_LEDS + 2 * usWidth + ulGetRandVal() % 100;
+                    /* We know this aurora will work it's way towards the start
+                    of the strip so bias the selection towards the end of the LED
+                    strip. Pick a new aurora start LED in the last 33%.*/
+                    usAuroraArray[i] = ulGetRandVal() % ( NUMBER_OF_LEDS / 3 ) +
+                                        ( 2 * NUMBER_OF_LEDS / 3 ) + usWidth;
                     usAuroraColors[i] = ulGetRandVal() % usColorRange;
                 }
             }
@@ -228,8 +251,8 @@ void vRainbowCrossfade( const uint32_t usPatternCount )
 /**
   * @brief  Crossfades between the RGB colors.
   * @note
-        If ramp then go from start of strip to end of strip
-        Else then go from end of strip to start of strip
+        If ramp then go from end of strip to start of strip
+        Else then go from start of strip to end of strip
   * @retval None
   */
 void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G,uint8_t B )
@@ -249,6 +272,7 @@ void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G
     }
     else
     {
+        /* Iterate from the start to the end. */
         for( int16_t i = start; i < ( start + len ); i++ )
         {
             vSetLed(i,
