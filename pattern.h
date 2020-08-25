@@ -12,10 +12,11 @@
 
 /*-----------------------------------------------------------*/
 
-/* Project specific defines. */
+/* Pattern length times. */
 #define configPATTERN_TASK_TIME_MS                                  ( 10 )
-#define configRAINBOW_CROSSFADE_TIME_MS                             ( 60000 )
+#define configRAINBOW_CROSSFADE_TIME_MS                             ( 30000 )
 #define configAURORA_BOREALIS_TIME_MS                               ( 60000 )
+#define configWAVE_TIME_MS                                          ( 30000 )
 
 /*-----------------------------------------------------------*/
 
@@ -28,10 +29,21 @@
 /* Aurora borealis defines. */
 
 /* Number of aurora's to simultaneously show. */
-#define configAURORA_BOREALIS_LENGTH                                ( 10 )
+#define configAURORA_BOREALIS_LENGTH                                ( 20 )
 
 /* How fast to move the aurora's. */
 #define configAURORA_BOREALIS_DELAY_MS                              ( 50 )
+
+/*-----------------------------------------------------------*/
+
+/* Wave defines. */
+#define configWAVE_LENGTH                                           ( 30 )
+#define configWAVE_NUM_COLORS                                       ( 4 )
+#define configWAVE_COLORS               \
+                {255, 0, 255},          \
+                {255, 50, 50},          \
+                {255, 0, 150},           \
+                {150, 0, 255},
 
 /*-----------------------------------------------------------*/
 
@@ -39,7 +51,9 @@
 typedef enum {
     OFF,
     RGB_RAMP,
-    AURORA_BOREALIS
+    AURORA_BOREALIS,
+    WAVE,
+    LAST_PATTERN
 } patterns_t;
 
 /* Color Channels */
@@ -67,8 +81,11 @@ uint8_t ucGetLed( int16_t LED, uint8_t color );
 /* Cosine Lookup table function. */
 uint8_t ucGetCos( int32_t val );
 
+/* Create a wave pattern. */
+void vWave( const uint32_t ulPatternCount );
+
 /* Simulate the aurora borealis. */
-void vAuroraBorealis( const uint32_t usPatternCount  );
+void vAuroraBorealis( const uint32_t usPatternCount );
 
 /* Crossfade between the rainbow colors. */
 void vRainbowCrossfade( const uint32_t usPatternCount );

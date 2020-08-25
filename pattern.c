@@ -39,8 +39,8 @@ void vCreatePattern( void * pvParameters  )
     xLastWakeTime = xTaskGetTickCount();
 
     /* Local variable for calculating the pattern. */
-    patterns_t eCurrentPattern = OFF;
-    uint32_t usPatternCount = 0;
+    patterns_t eCurrentPattern = WAVE;
+    uint32_t ulPatternCount = 0;
 
     while ( 1 )
     {
@@ -52,35 +52,47 @@ void vCreatePattern( void * pvParameters  )
             vFillStrip( 0, 0, 0 );
 
             eCurrentPattern = RGB_RAMP;
-            usPatternCount = 0;
+            ulPatternCount = 0;
             break;
 
         case RGB_RAMP:
             /* Ramp from one color to the next. */
-            vRainbowCrossfade( usPatternCount );
+            vRainbowCrossfade( ulPatternCount );
 
-            usPatternCount += configPATTERN_TASK_TIME_MS;
-            if ( usPatternCount >= configRAINBOW_CROSSFADE_TIME_MS )
+            ulPatternCount += configPATTERN_TASK_TIME_MS;
+            if ( ulPatternCount >= configRAINBOW_CROSSFADE_TIME_MS )
             {
                 /* Switch to the new pattern and reset the counter */
                 eCurrentPattern = AURORA_BOREALIS;
-                usPatternCount = 0;
+                ulPatternCount = 0;
             }
             break;
 
         case AURORA_BOREALIS:
             /* Visualize the northern lights. */
-            vAuroraBorealis( usPatternCount );
+            vAuroraBorealis( ulPatternCount );
 
-            usPatternCount += configPATTERN_TASK_TIME_MS;
-            if ( usPatternCount >= configAURORA_BOREALIS_TIME_MS )
+            ulPatternCount += configPATTERN_TASK_TIME_MS;
+            if ( ulPatternCount >= configAURORA_BOREALIS_TIME_MS )
             {
                 /* Switch to new pattern and reset the counter. */
-                eCurrentPattern = RGB_RAMP;
-                usPatternCount = 0;
+                eCurrentPattern = WAVE;
+                ulPatternCount = 0;
             }
             break;
 
+        case WAVE:
+            /* Create a wave pattern. */
+            vWave( ulPatternCount );
+
+            ulPatternCount += configPATTERN_TASK_TIME_MS;
+            if ( ulPatternCount >= configWAVE_TIME_MS )
+            {
+                /* Switch to new pattern and reset the counter. */
+                eCurrentPattern = RGB_RAMP;
+                ulPatternCount = 0;
+            }
+            break;
         }
 
         /* Check the stack size. */
@@ -100,13 +112,61 @@ void vCreatePattern( void * pvParameters  )
 
 
 /**
+  * @brief  Create wave pattern across LED strip.
+  * @retval None
+  */
+void vWave( const uint32_t ulPatternCount )
+{
+    static int16_t sWaveStartLed = 0;
+    static uint8_t ucColorIndex = 0;
+
+    /* Set colors for the wave pattern. */
+    static uint8_t ucColors[configWAVE_NUM_COLORS][3] = {
+        configWAVE_COLORS
+    };
+
+
+    if ( ulPatternCount == 0 )
+    {
+        sWaveStartLed = -configWAVE_LENGTH;
+        ucColorIndex = ulGetRandVal() % configWAVE_NUM_COLORS;
+    }
+
+    vFillStrip( 0, 0, 0 );
+
+    for ( uint16_t i = 0; i < configWAVE_LENGTH; i++ )
+    {
+        /* Generate a cosine wave that starts and stops at intensity 0. */
+        uint8_t sWaveIntensity = ucGetCos( 180 + ( i * ( 180 / configWAVE_LENGTH ) ) );
+
+        uint8_t R = ucColors[ucColorIndex][0] * sWaveIntensity / 255;
+        uint8_t G = ucColors[ucColorIndex][1] * sWaveIntensity / 255;
+        uint8_t B = ucColors[ucColorIndex][2] * sWaveIntensity / 255;
+
+        vSetLed( sWaveStartLed + i, R, G, B );
+    }
+
+    sWaveStartLed++;
+
+    /* If the wave goes off the end of the strip. */
+    if ( sWaveStartLed > NUMBER_OF_LEDS + configWAVE_LENGTH )
+    {
+        sWaveStartLed = -configWAVE_LENGTH;
+        ucColorIndex = ulGetRandVal() % configWAVE_NUM_COLORS;
+    }
+}
+/*-----------------------------------------------------------*/
+
+
+
+/**
   * @brief  Simulate the Aurora Borealis.
   * @retval None
   */
-void vAuroraBorealis( const uint32_t usPatternCount )
+void vAuroraBorealis( const uint32_t ulPatternCount )
 {
     /* Number of aurora's simultaneously show. */
-    static int16_t usAuroraArray[configAURORA_BOREALIS_LENGTH];
+    static int16_t sAuroraArray[configAURORA_BOREALIS_LENGTH];
 
     /* Aurora color.*/
     static uint16_t usAuroraColors[configAURORA_BOREALIS_LENGTH];
@@ -116,20 +176,20 @@ void vAuroraBorealis( const uint32_t usPatternCount )
     uint16_t usColorRange = 300;
 
     /* Initial run. */
-    if ( usPatternCount == 0 )
+    if ( ulPatternCount == 0 )
     {
         for ( uint16_t i = 0; i < configAURORA_BOREALIS_LENGTH; i++ )
         {
             /* Pick aurora LEDs. Biased to the end of the strip because this is
             the last LED in the aurora. */
-            usAuroraArray[i] = ( ulGetRandVal() % (2 * NUMBER_OF_LEDS) ) - (NUMBER_OF_LEDS / 4);
+            sAuroraArray[i] = ( ulGetRandVal() % (2 * NUMBER_OF_LEDS) ) - (NUMBER_OF_LEDS / 4);
 
             /* Get some random colors. */
             usAuroraColors[i] = ulGetRandVal() % usColorRange;
         }
     }
 
-    if ( usPatternCount % configAURORA_BOREALIS_DELAY_MS == 0 )
+    if ( ulPatternCount % configAURORA_BOREALIS_DELAY_MS == 0 )
     {
         vFillStrip( 0, 0, 63 );
 
@@ -139,13 +199,13 @@ void vAuroraBorealis( const uint32_t usPatternCount )
             /* LEDs in the center are brighter than the edges. */
 
             /* These LEDs get brighter towards the end of the strip. */
-            vCrossfade(usAuroraArray[i] - 2 * usWidth, usWidth, 1,
+            vCrossfade(sAuroraArray[i] - 2 * usWidth, usWidth, 1,
                        0,                                                           // R
                        ucGetCos( usAuroraColors[i] + usColorOffset ),               // G
                        ucGetCos( usAuroraColors[i] + 120 + usColorOffset ) / 2 );   // B
 
             /* These LEDs get dimmer towards the end of the strip. */
-            vCrossfade(usAuroraArray[i] - usWidth, usWidth, 0,
+            vCrossfade(sAuroraArray[i] - usWidth, usWidth, 0,
                        0,                                                           // R
                        ucGetCos( usAuroraColors[i] + usColorOffset ),               // G
                        ucGetCos( usAuroraColors[i] + 120 + usColorOffset ) / 2 );   // B
@@ -153,30 +213,30 @@ void vAuroraBorealis( const uint32_t usPatternCount )
             if ( i < ( configAURORA_BOREALIS_LENGTH / 2 ) )
             {
                 /* Move the aurora LED towards the end of the LED strip. */
-                usAuroraArray[i]++;
+                sAuroraArray[i]++;
 
                 /* If we increment off end of the LED strip. */
-                if ( usAuroraArray[i] > ( NUMBER_OF_LEDS + 2 * usWidth ) )
+                if ( sAuroraArray[i] > ( NUMBER_OF_LEDS + 2 * usWidth ) )
                 {
                     /* We know this aurora will work it's way towards the end of
                     the strip so bias the selection towards the start of the LED
                     strip. Pick a new aurora start LED in the first 33%.*/
-                    usAuroraArray[i] = ulGetRandVal() % ( NUMBER_OF_LEDS / 3 ) - usWidth;
+                    sAuroraArray[i] = ulGetRandVal() % ( NUMBER_OF_LEDS / 3 ) - usWidth;
                     usAuroraColors[i] = ulGetRandVal() % usColorRange;
                 }
             }
             else
             {
                 /* Move the aurora LED towards the start of the LED strip. */
-                usAuroraArray[i]--;
+                sAuroraArray[i]--;
 
                 /* If we decrement off the beginning of the LED strip. */
-                if ( usAuroraArray[i] < 0 )
+                if ( sAuroraArray[i] < 0 )
                 {
                     /* We know this aurora will work it's way towards the start
                     of the strip so bias the selection towards the end of the LED
                     strip. Pick a new aurora start LED in the last 33%.*/
-                    usAuroraArray[i] = ulGetRandVal() % ( NUMBER_OF_LEDS / 3 ) +
+                    sAuroraArray[i] = ulGetRandVal() % ( NUMBER_OF_LEDS / 3 ) +
                                         ( 2 * NUMBER_OF_LEDS / 3 ) + usWidth;
                     usAuroraColors[i] = ulGetRandVal() % usColorRange;
                 }
@@ -191,13 +251,13 @@ void vAuroraBorealis( const uint32_t usPatternCount )
   * @brief  Crossfades between the RGB colors.
   * @retval None
   */
-void vRainbowCrossfade( const uint32_t usPatternCount )
+void vRainbowCrossfade( const uint32_t ulPatternCount )
 {
     static colors_t eColor = RED;
     static int16_t usLedCount = -configRAINBOW_TRANSITION_LENGTH;
 
     /* Initial run. */
-    if ( usPatternCount == 0 )
+    if ( ulPatternCount == 0 )
     {
         eColor = (colors_t)( ulGetRandVal() % 3 );
         usLedCount = -configRAINBOW_TRANSITION_LENGTH;
@@ -206,7 +266,7 @@ void vRainbowCrossfade( const uint32_t usPatternCount )
     switch (eColor)
     {
     case RED:
-        if ( ( usLedCount < NUMBER_OF_LEDS ) && ( usPatternCount % configRAINBOW_RAMP_TIME_MS == 0 ) )
+        if ( ( usLedCount < NUMBER_OF_LEDS ) && ( ulPatternCount % configRAINBOW_RAMP_TIME_MS == 0 ) )
         {
             usLedCount++;
             vCrossfade( usLedCount, configRAINBOW_TRANSITION_LENGTH, 0, 255, 0, 0 );
@@ -219,7 +279,7 @@ void vRainbowCrossfade( const uint32_t usPatternCount )
         break;
 
     case GRN:
-        if ( ( usLedCount < NUMBER_OF_LEDS ) && ( usPatternCount % configRAINBOW_RAMP_TIME_MS == 0 ) )
+        if ( ( usLedCount < NUMBER_OF_LEDS ) && ( ulPatternCount % configRAINBOW_RAMP_TIME_MS == 0 ) )
         {
             usLedCount++;
             vCrossfade( usLedCount, configRAINBOW_TRANSITION_LENGTH, 0, 0, 255, 0 );
@@ -232,7 +292,7 @@ void vRainbowCrossfade( const uint32_t usPatternCount )
         break;
 
     case BLU:
-        if ( ( usLedCount < NUMBER_OF_LEDS ) && ( usPatternCount % configRAINBOW_RAMP_TIME_MS == 0 ) )
+        if ( ( usLedCount < NUMBER_OF_LEDS ) && ( ulPatternCount % configRAINBOW_RAMP_TIME_MS == 0 ) )
         {
             usLedCount++;
             vCrossfade( usLedCount, configRAINBOW_TRANSITION_LENGTH, 0, 0, 0, 255 );
@@ -255,7 +315,7 @@ void vRainbowCrossfade( const uint32_t usPatternCount )
         Else then go from start of strip to end of strip
   * @retval None
   */
-void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G,uint8_t B )
+void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G, uint8_t B )
 {
     uint32_t counter = 0;
     if( ramp )
