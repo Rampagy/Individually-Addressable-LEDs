@@ -26,7 +26,7 @@ uint8_t cos255[360] = {
 
 /**
   * @brief  Task chooses pattern and calculates the colors.
-  * @note   Executes every 50ms.
+  * @note   Executes every 10ms.
         Might increase/decrease the rate depending on CPU usage.
   * @retval None
   */
@@ -39,7 +39,7 @@ void vCreatePattern( void * pvParameters  )
     xLastWakeTime = xTaskGetTickCount();
 
     /* Local variable for calculating the pattern. */
-    patterns_t eCurrentPattern = WAVE;
+    patterns_t eCurrentPattern = RGB_RAMP;
     uint32_t ulPatternCount = 0;
 
     while ( 1 )
@@ -119,6 +119,7 @@ void vWave( const uint32_t ulPatternCount )
 {
     static int16_t sWaveStartLed = 0;
     static uint8_t ucColorIndex = 0;
+    static uint8_t usIncrement = 1;
 
     /* Set colors for the wave pattern. */
     static uint8_t ucColors[configWAVE_NUM_COLORS][3] = {
@@ -130,6 +131,7 @@ void vWave( const uint32_t ulPatternCount )
     {
         sWaveStartLed = -configWAVE_LENGTH;
         ucColorIndex = ulGetRandVal() % configWAVE_NUM_COLORS;
+        usIncrement = 0;
     }
 
     vFillStrip( 0, 0, 0 );
@@ -137,7 +139,7 @@ void vWave( const uint32_t ulPatternCount )
     for ( uint16_t i = 0; i < configWAVE_LENGTH; i++ )
     {
         /* Generate a cosine wave that starts and stops at intensity 0. */
-        uint8_t sWaveIntensity = ucGetCos( 180 + ( i * ( 180 / configWAVE_LENGTH ) ) );
+        uint8_t sWaveIntensity = ( ( i + 1 ) * 255 ) / configWAVE_LENGTH;
 
         uint8_t R = ucColors[ucColorIndex][0] * sWaveIntensity / 255;
         uint8_t G = ucColors[ucColorIndex][1] * sWaveIntensity / 255;
@@ -146,12 +148,18 @@ void vWave( const uint32_t ulPatternCount )
         vSetLed( sWaveStartLed + i, R, G, B );
     }
 
-    sWaveStartLed++;
+    sWaveStartLed += usIncrement;
+
+    if ( sWaveStartLed % configWAVE_INCREMENT_DELAY == 0 )
+    {
+        usIncrement++;
+    }
 
     /* If the wave goes off the end of the strip. */
     if ( sWaveStartLed > NUMBER_OF_LEDS + configWAVE_LENGTH )
     {
         sWaveStartLed = -configWAVE_LENGTH;
+        usIncrement = 0;
         ucColorIndex = ulGetRandVal() % configWAVE_NUM_COLORS;
     }
 }
@@ -253,59 +261,63 @@ void vAuroraBorealis( const uint32_t ulPatternCount )
   */
 void vRainbowCrossfade( const uint32_t ulPatternCount )
 {
-    static colors_t eColor = RED;
-    static int16_t usLedCount = -configRAINBOW_TRANSITION_LENGTH;
+    static uint8_t usColors[ configRAINBOW_SIMULTANEOUS_COLORS ][ COLOR_CHANNELS ] = { { 0 } };
+    static int16_t sLedCount[ configRAINBOW_SIMULTANEOUS_COLORS ] = { 0 };
 
     /* Initial run. */
     if ( ulPatternCount == 0 )
     {
-        eColor = (colors_t)( ulGetRandVal() % 3 );
-        usLedCount = -configRAINBOW_TRANSITION_LENGTH;
+        vGetRandPix( &usColors[0][0], configRAINBOW_SIMULTANEOUS_COLORS );
+
+        /* Evenly space the start positions throughout the LED strip. */
+        for ( uint8_t i = 0; i < configRAINBOW_SIMULTANEOUS_COLORS; i++ )
+        {
+            sLedCount[i] = -configRAINBOW_TRANSITION_LENGTH + i * ( ( configRAINBOW_TRANSITION_LENGTH + NUMBER_OF_LEDS ) / configRAINBOW_SIMULTANEOUS_COLORS );
+        }
     }
 
-    switch (eColor)
+    for ( uint8_t i = 0; i < configRAINBOW_SIMULTANEOUS_COLORS; i++ )
     {
-    case RED:
-        if ( ( usLedCount < NUMBER_OF_LEDS ) && ( ulPatternCount % configRAINBOW_RAMP_TIME_MS == 0 ) )
+        if ( ( sLedCount[i] < NUMBER_OF_LEDS ) && ( ulPatternCount % configRAINBOW_RAMP_TIME_MS == 0 ) )
         {
-            usLedCount++;
-            vCrossfade( usLedCount, configRAINBOW_TRANSITION_LENGTH, 0, 255, 0, 0 );
+            sLedCount[i]++;
+            vCrossfade( sLedCount[i], configRAINBOW_TRANSITION_LENGTH, 0, usColors[i][0], usColors[i][1], usColors[i][2] );
         }
-        else if ( usLedCount >= NUMBER_OF_LEDS )
+        else if ( sLedCount[i] >= NUMBER_OF_LEDS )
         {
-            eColor = GRN;
-            usLedCount = -configRAINBOW_TRANSITION_LENGTH;
+            sLedCount[i] = -configRAINBOW_TRANSITION_LENGTH;
+            vGetRandPix( &usColors[i][0], 1 );
         }
-        break;
-
-    case GRN:
-        if ( ( usLedCount < NUMBER_OF_LEDS ) && ( ulPatternCount % configRAINBOW_RAMP_TIME_MS == 0 ) )
-        {
-            usLedCount++;
-            vCrossfade( usLedCount, configRAINBOW_TRANSITION_LENGTH, 0, 0, 255, 0 );
-        }
-        else if ( usLedCount >= NUMBER_OF_LEDS )
-        {
-            eColor = BLU;
-            usLedCount = -configRAINBOW_TRANSITION_LENGTH;
-        }
-        break;
-
-    case BLU:
-        if ( ( usLedCount < NUMBER_OF_LEDS ) && ( ulPatternCount % configRAINBOW_RAMP_TIME_MS == 0 ) )
-        {
-            usLedCount++;
-            vCrossfade( usLedCount, configRAINBOW_TRANSITION_LENGTH, 0, 0, 0, 255 );
-        }
-        else if ( usLedCount >= NUMBER_OF_LEDS )
-        {
-            eColor = RED;
-            usLedCount = -configRAINBOW_TRANSITION_LENGTH;
-        }
-        break;
     }
 }
 /*-----------------------------------------------------------*/
+
+
+/**
+  * @brief  Gets a random pixel.
+  * @retval None
+  */
+void vGetRandPix(uint8_t* ucPix, uint16_t usNumPixels)
+{
+    for (uint16_t p = 0; p < usNumPixels; p++)
+    {
+        *(ucPix + ( p * COLOR_CHANNELS ) + 0) =  ulGetRandVal() % 256;  // R
+        *(ucPix + ( p * COLOR_CHANNELS ) + 1) =  ulGetRandVal() % 256;  // G
+        *(ucPix + ( p * COLOR_CHANNELS ) + 2) =  ulGetRandVal() % 256;  // B
+
+        uint8_t ucRandColorChannel = ulGetRandVal() % COLOR_CHANNELS;
+        uint8_t ucDifferentRandColorChannel = ( ucRandColorChannel + ( ulGetRandVal() % 2 ) + 1 ) % COLOR_CHANNELS;
+
+        /* Randomly make one channel less than 85. */
+        *(ucPix + ( p * COLOR_CHANNELS ) + ucRandColorChannel ) = ulGetRandVal() % 85;
+
+        /* Randomly make a different channel greater than 170 .*/
+        *(ucPix + ( p * COLOR_CHANNELS ) + ucDifferentRandColorChannel ) = ( ulGetRandVal() % 85 ) + 171;
+    }
+}
+
+/*-----------------------------------------------------------*/
+
 
 
 /**

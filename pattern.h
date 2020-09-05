@@ -14,7 +14,7 @@
 
 /* Pattern length times. */
 #define configPATTERN_TASK_TIME_MS                                  ( 10 )
-#define configRAINBOW_CROSSFADE_TIME_MS                             ( 30000 )
+#define configRAINBOW_CROSSFADE_TIME_MS                             ( 60000 )
 #define configAURORA_BOREALIS_TIME_MS                               ( 60000 )
 #define configWAVE_TIME_MS                                          ( 30000 )
 
@@ -23,6 +23,7 @@
 /* Rainbow crossfade defines. */
 #define configRAINBOW_TRANSITION_LENGTH                             ( 30 )
 #define configRAINBOW_RAMP_TIME_MS                                  ( 50 )
+#define configRAINBOW_SIMULTANEOUS_COLORS                           ( 3 )
 
 /*-----------------------------------------------------------*/
 
@@ -39,10 +40,11 @@
 /* Wave defines. */
 #define configWAVE_LENGTH                                           ( 30 )
 #define configWAVE_NUM_COLORS                                       ( 4 )
+#define configWAVE_INCREMENT_DELAY                                  ( 10 )
 #define configWAVE_COLORS               \
                 {255, 0, 255},          \
                 {255, 50, 50},          \
-                {255, 0, 150},           \
+                {255, 0, 150},          \
                 {150, 0, 255},
 
 /*-----------------------------------------------------------*/
@@ -92,6 +94,9 @@ void vRainbowCrossfade( const uint32_t usPatternCount );
 
 /* Calcualte the crossfade operation. */
 void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G,uint8_t B );
+
+/* Get some randomly colored pixels. */
+void vGetRandPix(uint8_t* ucPix, uint16_t usNumPixels);
 
 /*-----------------------------------------------------------*/
 
