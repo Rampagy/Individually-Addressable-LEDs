@@ -14,16 +14,17 @@
 
 /* Pattern length times. */
 #define configPATTERN_TASK_TIME_MS                                  ( 10 )
-#define configRAINBOW_CROSSFADE_TIME_MS                             ( 60000 )
+#define configRAINBOW_CROSSFADE_TIME_MS                             ( 45000 )
 #define configAURORA_BOREALIS_TIME_MS                               ( 60000 )
-#define configWAVE_TIME_MS                                          ( 30000 )
+#define configLASER_TIME_MS                                         ( 30000 )
+#define configFIRE_SPARKS_TIME_MS                                   ( 60000 )
 
 /*-----------------------------------------------------------*/
 
 /* Rainbow crossfade defines. */
-#define configRAINBOW_TRANSITION_LENGTH                             ( 30 )
+#define configRAINBOW_TRANSITION_LENGTH                             ( 5 )
 #define configRAINBOW_RAMP_TIME_MS                                  ( 50 )
-#define configRAINBOW_SIMULTANEOUS_COLORS                           ( 3 )
+#define configRAINBOW_SIMULTANEOUS_COLORS                           ( 4 )
 
 /*-----------------------------------------------------------*/
 
@@ -37,11 +38,11 @@
 
 /*-----------------------------------------------------------*/
 
-/* Wave defines. */
-#define configWAVE_LENGTH                                           ( 30 )
-#define configWAVE_NUM_COLORS                                       ( 4 )
-#define configWAVE_INCREMENT_DELAY                                  ( 10 )
-#define configWAVE_COLORS               \
+/* Laser defines. */
+#define configLASER_LENGTH                                          ( 30 )
+#define configLASER_INCREMENT_DELAY                                 ( 10 )
+#define configLASER_NUM_COLORS                                      ( 4 )
+#define configLASER_COLORS              \
                 {255, 0, 255},          \
                 {255, 50, 50},          \
                 {255, 0, 150},          \
@@ -49,12 +50,29 @@
 
 /*-----------------------------------------------------------*/
 
+/*  Fire sparks defines. */
+#define configFIRE_SPARKS                                           ( 1 )
+#define configFIRE_DIM_SPEED                                        ( 98 )   /* Percentage * 100 , must be <= 100*/
+#define configFIRE_DIM_INTERVAL                                     ( 10 )
+#define configFIRE_EMBER_INTERVAL                                   ( 20 )
+#define configFIRE_EMBER_LENGTH                                     ( 5 )
+#define configFIRE_NUM_COLORS                                       ( 6 )
+#define configFIRE_COLORS                       \
+                {0x80, 0x11, 0x00},             \
+                {0xFF, 0x8C, 0x00},             \
+                {0xD7, 0x35, 0x02},             \
+                {0xFC, 0x64, 0x00},             \
+                {0xE8, 0x61, 0x00},             \
+                {0xE2, 0x58, 0x22},
+
+/*-----------------------------------------------------------*/
+
 /* Patterns */
 typedef enum {
-    OFF,
-    RGB_RAMP,
+    RAINBOW_CROSSFADE,
     AURORA_BOREALIS,
-    WAVE,
+    LASER,
+    FIRE_SPARKS,
     LAST_PATTERN
 } patterns_t;
 
@@ -71,11 +89,14 @@ typedef enum {
 /* Task for creating patterns for the LED strip. */
 void vCreatePattern( void * );
 
+/* Function for getting the next pattern, if necessary. */
+void vCheckNextPattern( uint32_t* ulPatternCount, const uint32_t ulPatternLength, patterns_t* eCurrentPattern );
+
 /* Fill the strip with a color. */
 void vFillStrip( uint8_t R, uint8_t G, uint8_t B );
 
 /* Set a single led. */
-void vSetLed( int16_t LED, uint8_t R, uint8_t G, uint8_t B );
+void vSetLed( int16_t LED, int16_t R, int16_t G, int16_t B );
 
 /* Get led color channel. */
 uint8_t ucGetLed( int16_t LED, uint8_t color );
@@ -84,13 +105,16 @@ uint8_t ucGetLed( int16_t LED, uint8_t color );
 uint8_t ucGetCos( int32_t val );
 
 /* Create a wave pattern. */
-void vWave( const uint32_t ulPatternCount );
+void vLaser( const uint32_t ulPatternCount );
 
 /* Simulate the aurora borealis. */
 void vAuroraBorealis( const uint32_t usPatternCount );
 
 /* Crossfade between the rainbow colors. */
 void vRainbowCrossfade( const uint32_t usPatternCount );
+
+/* Create an fire like pattern. */
+void vFireSparks( const uint32_t usPatternCount );
 
 /* Calcualte the crossfade operation. */
 void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G,uint8_t B );

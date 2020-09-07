@@ -12,7 +12,7 @@
         <ByteLimit>50</ByteLimit>
     </Stack>
     <DebugChecksum>
-        <Checksum>2139645815</Checksum>
+        <Checksum>3561953013</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -98,7 +98,9 @@
     </CodeCoverage>
     <watch_formats>
         <Fmt0>{W}0:ultemp	4	0</Fmt0>
-        <Fmt1>{W}1:sWaveIntensity	3	0</Fmt1>
+        <Fmt1>{W}1:LASER	3	0</Fmt1>
+        <Fmt2>{W}1:RED	3	0</Fmt2>
+        <Fmt3>{W}1:sWaveIntensity	3	0</Fmt3>
     </watch_formats>
     <Trace2>
         <Enabled>0</Enabled>

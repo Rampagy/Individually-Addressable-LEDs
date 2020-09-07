@@ -39,7 +39,7 @@ void vCreatePattern( void * pvParameters  )
     xLastWakeTime = xTaskGetTickCount();
 
     /* Local variable for calculating the pattern. */
-    patterns_t eCurrentPattern = RGB_RAMP;
+    patterns_t eCurrentPattern = FIRE_SPARKS; // ulGetRandVal() % LAST_PATTERN;
     uint32_t ulPatternCount = 0;
 
     while ( 1 )
@@ -47,58 +47,43 @@ void vCreatePattern( void * pvParameters  )
         switch ( eCurrentPattern )
         {
         default:
-        case OFF:
-            /* Turn LEDs off and immediately go to the next pattern. */
-            vFillStrip( 0, 0, 0 );
-
-            eCurrentPattern = RGB_RAMP;
-            ulPatternCount = 0;
-            break;
-
-        case RGB_RAMP:
+        case RAINBOW_CROSSFADE:
             /* Ramp from one color to the next. */
             vRainbowCrossfade( ulPatternCount );
 
-            ulPatternCount += configPATTERN_TASK_TIME_MS;
-            if ( ulPatternCount >= configRAINBOW_CROSSFADE_TIME_MS )
-            {
-                /* Switch to the new pattern and reset the counter */
-                eCurrentPattern = AURORA_BOREALIS;
-                ulPatternCount = 0;
-            }
+            /* Check for next pattern. */
+            vCheckNextPattern( &ulPatternCount, configRAINBOW_CROSSFADE_TIME_MS, &eCurrentPattern );
             break;
 
         case AURORA_BOREALIS:
             /* Visualize the northern lights. */
             vAuroraBorealis( ulPatternCount );
 
-            ulPatternCount += configPATTERN_TASK_TIME_MS;
-            if ( ulPatternCount >= configAURORA_BOREALIS_TIME_MS )
-            {
-                /* Switch to new pattern and reset the counter. */
-                eCurrentPattern = WAVE;
-                ulPatternCount = 0;
-            }
+            /* Check for next pattern. */
+            vCheckNextPattern( &ulPatternCount, configAURORA_BOREALIS_TIME_MS, &eCurrentPattern );
             break;
 
-        case WAVE:
+        case LASER:
             /* Create a wave pattern. */
-            vWave( ulPatternCount );
+            vLaser( ulPatternCount );
 
-            ulPatternCount += configPATTERN_TASK_TIME_MS;
-            if ( ulPatternCount >= configWAVE_TIME_MS )
-            {
-                /* Switch to new pattern and reset the counter. */
-                eCurrentPattern = RGB_RAMP;
-                ulPatternCount = 0;
-            }
+            /* Check for next pattern. */
+            vCheckNextPattern( &ulPatternCount, configLASER_TIME_MS, &eCurrentPattern );
+            break;
+
+        case FIRE_SPARKS:
+            /* Create a fire with sparks pattern. */
+            vFireSparks ( ulPatternCount );
+
+            /* Check for next pattern. */
+            vCheckNextPattern( &ulPatternCount, configFIRE_SPARKS_TIME_MS, &eCurrentPattern );
             break;
         }
 
         /* Check the stack size. */
         xAvailableStack = uxTaskGetStackHighWaterMark( xCreatePatternHandle );
 
-        if (xAvailableStack <= 20)
+        if ( xAvailableStack <= 20 )
         {
             /* Turn orangle LED on if stack overflow is imminent/detected. */
             STM_EVAL_LEDOn( LED4 );
@@ -110,57 +95,123 @@ void vCreatePattern( void * pvParameters  )
 }
 /*-----------------------------------------------------------*/
 
+/**
+  * @brief  Create fire/sparks pattern.
+  * @retval None
+  */
+void vFireSparks ( const uint32_t ulPatternCount )
+{
+    /* Set colors for the wave pattern. */
+    static uint8_t ucColors[ configFIRE_NUM_COLORS ][ COLOR_CHANNELS ] = {
+        configFIRE_COLORS
+    };
+
+    if ( ulPatternCount == 0 )
+    {
+        vFillStrip( 0xE2, 0x58, 0x22 );
+    }
+
+    /* Dim the strip every interval. */
+    if ( ulPatternCount % configFIRE_DIM_INTERVAL == 0 )
+    {
+        for ( uint16_t i = 0; i < NUMBER_OF_LEDS; i++ )
+        {
+            vSetLed( i,
+                    configFIRE_DIM_SPEED * (int16_t) ucGetLed( i, RED ) / 100,      // R
+                    configFIRE_DIM_SPEED * (int16_t) ucGetLed( i, GRN ) / 100,      // G
+                    configFIRE_DIM_SPEED * (int16_t) ucGetLed( i, BLU ) / 100);     // B
+        }
+    }
+
+    /* Add new sparks. */
+    for ( uint16_t i = 0; i < configFIRE_SPARKS; i++ )
+    {
+        if ( ulPatternCount % configFIRE_EMBER_INTERVAL == 0 )
+        {
+            uint16_t usSparkLed = ulGetRandVal() % NUMBER_OF_LEDS;
+            uint16_t usLedColor = ulGetRandVal() % configFIRE_NUM_COLORS;
+
+            vCrossfade( usSparkLed, configFIRE_EMBER_LENGTH, 0,
+                        ucColors[ usLedColor ][ 0 ],      // R
+                        ucColors[ usLedColor ][ 1 ],      // G
+                        ucColors[ usLedColor ][ 2 ] );    // B
+
+            vCrossfade( usSparkLed, configFIRE_EMBER_LENGTH, 1,
+                        ucColors[ usLedColor ][ 0 ],      // R
+                        ucColors[ usLedColor ][ 1 ],      // G
+                        ucColors[ usLedColor ][ 2 ] );    // B
+        }
+    }
+}
+
+
+/**
+  * @brief  Check for the next pattern.
+  * @retval None
+  */
+void vCheckNextPattern( uint32_t* ulPatternCount, const uint32_t ulPatternLength, patterns_t* eCurrentPattern )
+{
+    *ulPatternCount += configPATTERN_TASK_TIME_MS;
+    if ( *ulPatternCount >= ulPatternLength )
+    {
+        /* Switch to new pattern and reset the counter. */
+        *eCurrentPattern = ( patterns_t )( ( *eCurrentPattern + 1 ) % LAST_PATTERN );
+        *ulPatternCount = 0;
+    }
+}
+/*-----------------------------------------------------------*/
+
+
 
 /**
   * @brief  Create wave pattern across LED strip.
   * @retval None
   */
-void vWave( const uint32_t ulPatternCount )
+void vLaser( const uint32_t ulPatternCount )
 {
-    static int16_t sWaveStartLed = 0;
+    static int16_t sLaserStartLed = 0;
     static uint8_t ucColorIndex = 0;
     static uint8_t usIncrement = 1;
 
     /* Set colors for the wave pattern. */
-    static uint8_t ucColors[configWAVE_NUM_COLORS][3] = {
-        configWAVE_COLORS
+    static uint8_t ucColors[ configLASER_NUM_COLORS ][ COLOR_CHANNELS ] = {
+        configLASER_COLORS
     };
 
 
     if ( ulPatternCount == 0 )
     {
-        sWaveStartLed = -configWAVE_LENGTH;
-        ucColorIndex = ulGetRandVal() % configWAVE_NUM_COLORS;
+        sLaserStartLed = -configLASER_LENGTH;
+        ucColorIndex = ulGetRandVal() % configLASER_NUM_COLORS;
         usIncrement = 0;
     }
 
     vFillStrip( 0, 0, 0 );
 
-    for ( uint16_t i = 0; i < configWAVE_LENGTH; i++ )
+    for ( uint16_t i = 0; i < configLASER_LENGTH; i++ )
     {
-        /* Generate a cosine wave that starts and stops at intensity 0. */
-        uint8_t sWaveIntensity = ( ( i + 1 ) * 255 ) / configWAVE_LENGTH;
+        uint8_t sIntensity = ( ( i + 1 ) * 255 ) / configLASER_LENGTH;
 
-        uint8_t R = ucColors[ucColorIndex][0] * sWaveIntensity / 255;
-        uint8_t G = ucColors[ucColorIndex][1] * sWaveIntensity / 255;
-        uint8_t B = ucColors[ucColorIndex][2] * sWaveIntensity / 255;
+        uint8_t R = ucColors[ucColorIndex][0] * sIntensity / 255;
+        uint8_t G = ucColors[ucColorIndex][1] * sIntensity / 255;
+        uint8_t B = ucColors[ucColorIndex][2] * sIntensity / 255;
 
-        vSetLed( sWaveStartLed + i, R, G, B );
+        vSetLed( sLaserStartLed + i, R, G, B );
     }
 
-    sWaveStartLed += usIncrement;
+    sLaserStartLed += usIncrement;
 
-    if ( sWaveStartLed % configWAVE_INCREMENT_DELAY == 0 )
+    if ( sLaserStartLed % configLASER_INCREMENT_DELAY == 0 )
     {
         usIncrement++;
     }
 
-    /* If the wave goes off the end of the strip. */
-    if ( sWaveStartLed > NUMBER_OF_LEDS + configWAVE_LENGTH )
+    /* If the laser goes off the end of the strip. */
+    if ( sLaserStartLed > NUMBER_OF_LEDS + configLASER_LENGTH )
     {
-        sWaveStartLed = -configWAVE_LENGTH;
+        sLaserStartLed = -configLASER_LENGTH;
         usIncrement = 0;
-        ucColorIndex = ulGetRandVal() % configWAVE_NUM_COLORS;
+        ucColorIndex = ulGetRandVal() % configLASER_NUM_COLORS;
     }
 }
 /*-----------------------------------------------------------*/
@@ -333,7 +384,7 @@ void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G
     if( ramp )
     {
         /* Iterate from the end to the start. */
-        for( int16_t i = start + len; i > start; i-- )
+        for( int16_t i = start; i > start - len; i-- )
         {
             vSetLed(i,
                    ucGetLed(i, RED) * counter / len + R * ( len - counter ) / len,
@@ -376,13 +427,18 @@ void vFillStrip( uint8_t R, uint8_t G, uint8_t B )
   * @brief  Sets the RGB value for an led.
   * @retval None
   */
-void vSetLed( int16_t LED, uint8_t R, uint8_t G, uint8_t B )
+void vSetLed( int16_t LED, int16_t R, int16_t G, int16_t B )
 {
     if ( ( LED < NUMBER_OF_LEDS ) && ( LED >= 0 ) )
     {
-        ucLeds[LED][GRN] = G;
-        ucLeds[LED][RED] = R;
-        ucLeds[LED][BLU] = B;
+        /* Satureate each color channel. */
+        G = ( G < 0 ) * 0 + ( G > 255 ) * 255 + ( ( G >= 0 ) && ( G <= 255 ) ) * G;
+        R = ( R < 0 ) * 0 + ( R > 255 ) * 255 + ( ( R >= 0 ) && ( R <= 255 ) ) * R;
+        B = ( B < 0 ) * 0 + ( B > 255 ) * 255 + ( ( B >= 0 ) && ( B <= 255 ) ) * B;
+
+        ucLeds[ LED ][ GRN ] = G;
+        ucLeds[ LED ][ RED ] = R;
+        ucLeds[ LED ][ BLU ] = B;
     }
 }
 /*-----------------------------------------------------------*/
@@ -397,7 +453,7 @@ uint8_t ucGetLed( int16_t LED, uint8_t color )
     uint8_t ucLedColor = 0;
     if ( ( LED < NUMBER_OF_LEDS ) && ( LED >= 0 ) && ( color <= BLU ) )
     {
-        ucLedColor = ucLeds[LED][color];
+        ucLedColor = ucLeds[ LED ][ color ];
     }
 
     return ucLedColor;
