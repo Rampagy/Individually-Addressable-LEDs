@@ -2,9 +2,11 @@
 
 Example code using FreeRTOS to control individually addressable LEDs (SK6812).
 
+https://youtu.be/5Bn3eNN9Ki0
+
 ## Architecture
 
-The idea is to use 3 different tasks to manage the LEDS. The tasks are listed below by priority (higher numbers will preempt lower numbers).
+The idea is to use 2 different tasks to manage the LEDS. The tasks are listed below by priority (higher numbers will preempt lower numbers).
 
 0.  Idle Task
     -  Does nothing
@@ -12,10 +14,9 @@ The idea is to use 3 different tasks to manage the LEDS. The tasks are listed be
     - Decides what pattern to show
     - Calculates RGB color based on selected pattern
     - 10ms (100 Hz)
-3.  Refresh Task
+2.  Refresh Task
     - Refreshes the actual colors shown on the LED strip
         - Initiates PWM pulse train
-        - Uses DMA to transfer the duty cycle of each period
     - 10ms (100 Hz)
 
 ## Peripherals
