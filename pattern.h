@@ -18,6 +18,7 @@
 #define configAURORA_BOREALIS_TIME_MS                               ( 60000 )
 #define configLASER_TIME_MS                                         ( 30000 )
 #define configFIRE_SPARKS_TIME_MS                                   ( 60000 )
+#define configRGB_AUDIO_TIME_MS                                     ( 30000 )
 
 /*-----------------------------------------------------------*/
 
@@ -67,12 +68,17 @@
 
 /*-----------------------------------------------------------*/
 
+/* RGB audio defines. */
+
+/*-----------------------------------------------------------*/
+
 /* Patterns */
 typedef enum {
     RAINBOW_CROSSFADE,
     AURORA_BOREALIS,
     LASER,
     FIRE_SPARKS,
+    RGB_AUDIO,
     LAST_PATTERN
 } patterns_t;
 
@@ -113,8 +119,11 @@ void vAuroraBorealis( const uint32_t usPatternCount );
 /* Crossfade between the rainbow colors. */
 void vRainbowCrossfade( const uint32_t usPatternCount );
 
-/* Create an fire like pattern. */
+/* Create a fire like pattern. */
 void vFireSparks( const uint32_t usPatternCount );
+
+/* Create an RGB audio pattern. */
+void vRgbAudio ( const uint32_t ulPatternCount );
 
 /* Calcualte the crossfade operation. */
 void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G,uint8_t B );

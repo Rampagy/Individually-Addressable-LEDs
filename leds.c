@@ -177,7 +177,7 @@ void vInitLeds(void)
     TIM_OC1Init(TIM4, &TIM_OCInitStructure);
     TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
 
-    /* DMA1 channel 2 configuration. */
+    /* DMA1 channel 0 configuration. */
     DMA_DeInit(DMA1_Stream0);
 
     DMA_InitStructure.DMA_Channel = DMA_Channel_2;
@@ -196,7 +196,7 @@ void vInitLeds(void)
 
     DMA_Init(DMA1_Stream0, &DMA_InitStructure);
     DMA_ITConfig(DMA1_Stream0, DMA_IT_TC, ENABLE);
-    DMA_ClearFlag(DMA1_Stream0,DMA_FLAG_TCIF0);
+    DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF0);
 
     TIM_DMAConfig(TIM4, TIM_DMABase_CCR1, TIM_DMABurstLength_1Byte);
     TIM_SelectCCDMA(TIM4, ENABLE);
@@ -212,7 +212,7 @@ void vInitLeds(void)
 
     /* Initalize the random number generator. */
     /* Call RNG_GetRandomNumber(void) to get a random number. */
-    RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG,ENABLE);
+    RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG, ENABLE);
     RNG_Cmd(ENABLE);
 
 }

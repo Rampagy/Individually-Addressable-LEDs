@@ -125,7 +125,7 @@
                 </option>
                 <option>
                     <name>OGUseCmsisDspLib</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>GRuntimeLibThreads</name>
@@ -1247,6 +1247,12 @@
             </file>
         </group>
     </group>
+    <file>
+        <name>$PROJ_DIR$\audio.c</name>
+    </file>
+    <file>
+        <name>$PROJ_DIR$\audio.h</name>
+    </file>
     <file>
         <name>$PROJ_DIR$\FreeRTOSConfig.h</name>
     </file>

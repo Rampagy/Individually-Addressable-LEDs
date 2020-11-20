@@ -30,6 +30,7 @@ Timer 4: LED Data Line
 #### GPIO:
 
 ```
+A4: Audio voltage data
 B6: LED Data
 D12: LED4 (GRN) - Indicates stack overflow for vCreatePattern
 D13: LED3 (ORG) - Indicates stack overflow for vUpdateLedStrip
@@ -37,13 +38,34 @@ D14: LED5 (RED)
 D15: LED6 (BLU)
 ```
 
+#### DMA:
+```
+DMA1 Stream 0: Transfer duty cycles to PWM module.
+DMA1 Stream 1: Stores audio ADC values.
+```
+
+#### ADC's:
+```
+ADC12 Channel 4: Samples audio voltage data
+```
+
 ## Resources
+
+https://www.st.com/content/ccc/resource/technical/layouts_and_diagrams/schematic_pack/group1/60/36/18/8c/71/30/45/dc/MB997-F407VGT6-E01_Schematic/files/MB997-F407VGT6-E01_Schematic.pdf/jcr:content/translations/en.MB997-F407VGT6-E01_Schematic.pdf
+
+https://www.st.com/resource/en/user_manual/dm00039084-discovery-kit-with-stm32f407vg-mcu-stmicroelectronics.pdf
 
 http://socialledge.com/sjsu/index.php/FreeRTOS_Tutorial
 
 https://www.freertos.org/a00125.html
 
 https://cdn-shop.adafruit.com/product-files/1138/SK6812+LED+datasheet+.pdf
+
+https://www.iar.com/support/resources/articles/using-iar-embedded-workbench-for-arm-and-the-cmsis-dsp-library/
+
+https://stm32f4-discovery.net/2014/10/stm32f4-fft-example/
+
+https://www.keil.com/pack/doc/CMSIS/DSP/html/group__RealFFT.html#ga5d2ec62f3e35575eba467d09ddcd98b5
 
 ## Notes
 Use `xTaskCreateStatic` to create a task with the stack in a static location

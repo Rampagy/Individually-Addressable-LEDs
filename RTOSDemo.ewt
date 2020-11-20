@@ -1604,6 +1604,12 @@
         </group>
     </group>
     <file>
+        <name>$PROJ_DIR$\audio.c</name>
+    </file>
+    <file>
+        <name>$PROJ_DIR$\audio.h</name>
+    </file>
+    <file>
         <name>$PROJ_DIR$\FreeRTOSConfig.h</name>
     </file>
     <file>

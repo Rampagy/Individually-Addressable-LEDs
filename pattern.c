@@ -78,6 +78,14 @@ void vCreatePattern( void * pvParameters  )
             /* Check for next pattern. */
             vCheckNextPattern( &ulPatternCount, configFIRE_SPARKS_TIME_MS, &eCurrentPattern );
             break;
+
+        case RGB_AUDIO:
+            /* Create RGB audio pattern. */
+            vRgbAudio ( ulPatternCount );
+
+            /* Check for next pattern. */
+            vCheckNextPattern( &ulPatternCount, configRGB_AUDIO_TIME_MS, &eCurrentPattern );
+            break;
         }
 
         /* Check the stack size. */
@@ -94,6 +102,23 @@ void vCreatePattern( void * pvParameters  )
     }
 }
 /*-----------------------------------------------------------*/
+
+
+
+/**
+  * @brief  Create RGB Audio pattern.
+  * @retval None
+  */
+void vRgbAudio ( const uint32_t ulPatternCount )
+{
+    if ( ulPatternCount == 0 )
+    {
+        vFillStrip( 0x00, 0x00, 0x00 );
+    }
+}
+/*-----------------------------------------------------------*/
+
+
 
 /**
   * @brief  Create fire/sparks pattern.
@@ -143,6 +168,8 @@ void vFireSparks ( const uint32_t ulPatternCount )
         }
     }
 }
+/*-----------------------------------------------------------*/
+
 
 
 /**

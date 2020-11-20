@@ -12,7 +12,7 @@
         <ByteLimit>50</ByteLimit>
     </Stack>
     <DebugChecksum>
-        <Checksum>3561953013</Checksum>
+        <Checksum>3848528632</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -173,7 +173,8 @@
         <mode>0</mode>
     </DisassembleMode>
     <Breakpoints2>
-        <Count>0</Count>
+        <Bp0>_ 1 "EMUL_CODE" "{$PROJ_DIR$\pattern.c}.47.9" 0 0 1 "" 0 "" 0</Bp0>
+        <Count>1</Count>
     </Breakpoints2>
     <Aliases>
         <A0>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\misc.c" ""</A0>

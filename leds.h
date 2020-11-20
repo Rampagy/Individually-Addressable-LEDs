@@ -16,6 +16,8 @@
 #include "stm32f4xx_rcc.h"
 #include "stm32f4xx_rng.h"
 
+/*-----------------------------------------------------------*/
+
 /* Defines for the SK6812 LEDs. */
 #define NUMBER_OF_LEDS 144
 
@@ -43,6 +45,8 @@ Number of LEDs * (Color Channels / LED) * (Bits / Color Channel) */
 
 /* Total nuumber of periods to send the entire LED strip */
 #define TOTAL_PERIODS (LED_PERIODS + RESET_PERIODS)
+
+/*-----------------------------------------------------------*/
 
 /* Function for initializing the hardware to talk to the LEDs. */
 void vInitLeds( void );

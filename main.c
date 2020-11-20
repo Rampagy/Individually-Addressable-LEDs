@@ -35,6 +35,7 @@
 #include "system_stm32f4xx.h"
 #include "leds.h"
 #include "pattern.h"
+#include "audio.h"
 
 /* Hardware and starter kit includes. */
 #include "arm_comm.h"
@@ -69,6 +70,9 @@ int main(void)
 
     /* Initialize the individually addressable LEDs. */
     vInitLeds();
+
+    /* Initialize the ADC/DMA/DSP instructions. */
+    vInitAudio();
 
     /* Spawn the tasks. */
     /*           Task,                  Task Name,          Stack Size,                             parameters,     priority,                           task handle */
