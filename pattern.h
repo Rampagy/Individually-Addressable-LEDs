@@ -9,6 +9,7 @@
 
 /* Peripheral includes. */
 #include "leds.h"
+#include "audio.h"
 
 /*-----------------------------------------------------------*/
 
@@ -138,6 +139,12 @@ extern volatile uint8_t ucLeds[NUMBER_OF_LEDS][COLOR_CHANNELS];
 
 /* Get ADC buffer full from other file (audio.c). */
 extern uint8_t ucAdcBufferFull;
+
+/* Get Adc sample buffer from other file (audio.c). */
+extern float32_t ufAdcSampleBuffer[ADC_SAMPLES];
+
+/* Get rfft instance from other file (audio.c). */
+extern arm_rfft_fast_instance_f32 S;
 
 /*-----------------------------------------------------------*/
 

@@ -31,7 +31,7 @@ Timer 12: 44.1 kHz timer for sampling audio data
 #### GPIO:
 
 ```
-A4: Audio voltage data
+C4: Audio voltage data
 B6: LED Data
 D12: LED4 (GRN) - Indicates stack overflow for vCreatePattern
 D13: LED3 (ORG) - Indicates stack overflow for vUpdateLedStrip
@@ -46,7 +46,7 @@ DMA1 Stream 0: Transfer duty cycles to PWM module.
 
 #### ADC's:
 ```
-ADC1 Channel 4: Samples audio voltage data
+ADC1 Channel 12: Samples audio voltage data
 ```
 
 ## Resources

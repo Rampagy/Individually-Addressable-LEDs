@@ -106,11 +106,28 @@ void vCreatePattern( void * pvParameters  )
 
 
 /**
-  * @brief  Create RGB Audio pattern.
+  * @brief  Create RGB audio pattern.
   * @retval None
   */
 void vRgbAudio ( const uint32_t ulPatternCount )
 {
+    /* Create array for storing frequency information. */
+    float32_t ufComplexFFT[ADC_SAMPLES] = { 0.0F };
+
+    /* The real FFT does not provide symmetry so divide FFT_SIZE by 2. */
+    float32_t ufFourierFrequency[FFT_SIZE/2] = { 0.0F };
+
+    /* Scaling vector. */
+    float32_t ufScalingVector[FFT_SIZE/2] = { 0.0F };
+
+    /* DC offset has a different scaling. */
+    ufScalingVector[0] = 1.0 / FFT_SIZE;
+    for (uint16_t i = 1; i < (FFT_SIZE/2); i++)
+    {
+        /* I do not know where these scalings come from. */
+        ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
+    }
+
     /* Start sampling the ADC's. */
     ADC_SoftwareStartConv( ADC1 );
 
@@ -129,10 +146,50 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     /* Reset the Adc buffer full flag. */
     ucAdcBufferFull = 0;
 
-    /** @TODO: Perform FFT. */
+    /* This can be uncommented to test the fft logic. */
+    //for (uint16_t i = 0; i < ADC_SAMPLES; i++)
+    //{
+    //    /* Frequency magnitude at index 10 (4410 Hz) should be the max at 10
+    //     * with a DC offset of 50.
+    //     */
+    //    ufAdcSampleBuffer[i] = 10*arm_sin_f32( 2.0*3.14159F*i/8.0 ) + 50;
+    //}
 
-    /** @TODO: Write frequency data to LEDs. */
+    /* Perform real FFT (nobody understand complex numbers anyways). */
+    arm_rfft_fast_f32( &S, ufAdcSampleBuffer, ufComplexFFT, 0 );
 
+    /* Save DC offset into temporary variable becuase arm_cmplx_mag_f32 clear is out. */
+    float32_t temp = ufComplexFFT[0];
+
+    /* Output of FFT is always complex, so convert to magnitude. */
+    arm_cmplx_mag_f32( ufComplexFFT, ufFourierFrequency, FFT_SIZE );
+
+    /* Complex magnitude is not applicable to the DC offset. */
+    ufFourierFrequency[0] = temp;
+
+    /* Rescale ufFourierFrequency to its true amplitudes.
+     * I have no idea where these scalings come from, but it works. */
+    arm_mult_f32( ufFourierFrequency, ufScalingVector, ufFourierFrequency, FFT_SIZE/2 );
+
+    /** @TODO: Make pattern based on frequency data.
+      * @NOTE: ufFourierFrquency[0] is the dc offset.  To get the true dc offset
+      *     you have to divide this number by FFT_SIZE or ADC_SAMPLES.
+      * @NOTE: The rest of the values are scaled by FFT_SIZE/2 or ADC_SAMPLES/4.
+      *     So to get the true magnitude of the frequencies you have to divide
+      *     by FFT_SIZE/2 or ADC_SAMPLES/4.
+      *
+      * The frequency that corresponds to each index can be determined by:
+      *     Frequency = (Idx+1) * SamplingFrequency / FFT_SIZE
+      *
+      * For this project it equates to ~689Hz per index.
+      *     689.1 Hz = 44100 / 64
+      */
+
+    /* Clear out AdcSampleBuffer. */
+    for (uint16_t i = 0; i < ADC_SAMPLES; i++)
+    {
+        ufAdcSampleBuffer[i] = 0;
+    }
 }
 /*-----------------------------------------------------------*/
 

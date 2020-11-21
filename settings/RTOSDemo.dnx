@@ -12,7 +12,7 @@
         <ByteLimit>50</ByteLimit>
     </Stack>
     <DebugChecksum>
-        <Checksum>1223138323</Checksum>
+        <Checksum>2690989138</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -22,8 +22,8 @@
         <ShowArgs>0</ShowArgs>
     </CallStack>
     <Disassembly>
-        <InstrCount>0</InstrCount>
         <MixedMode>1</MixedMode>
+        <InstrCount>0</InstrCount>
     </Disassembly>
     <StackPlugin>
         <Enabled>1</Enabled>

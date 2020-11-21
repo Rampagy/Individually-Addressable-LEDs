@@ -7,8 +7,6 @@
 /* Kernel includes. */
 #include "FreeRTOS.h"
 #include "task.h"
-//#include "timers.h"
-//#include "semphr.h"
 
 /* Peripheral includes. */
 #include "stm32f4_discovery.h"
@@ -18,7 +16,8 @@
 
 /*-----------------------------------------------------------*/
 
-#define ADC_SAMPLES                                 256U
+#define ADC_SAMPLES                                 128U // 64 real samples, 64 complex samples
+#define FFT_SIZE                                    (ADC_SAMPLES / 2)
 #define SAMPLING_FREQUENCY                          44100U
 #define SAMPLING_COMPUTATION_TIME_TIM9_CYCLES       100U
 

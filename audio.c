@@ -1,6 +1,8 @@
 #include "audio.h"
 
-uint16_t usAdcSampleBuffer[ADC_SAMPLES] = { 0 };
+/* Initialize variables for fast fourier transform. */
+arm_rfft_fast_instance_f32 S;
+float32_t ufAdcSampleBuffer[ADC_SAMPLES] = { 0.0 };
 uint16_t usAdcSampleIndex = 0;
 uint8_t  ucAdcConversionComplete = 0;
 uint8_t  ucAdcBufferFull = 0;
@@ -49,7 +51,7 @@ void TIM8_BRK_TIM12_IRQHandler( void )
         if ( ucAdcConversionComplete )
         {
             /* Save the ADC sample. */
-            usAdcSampleBuffer[usAdcSampleIndex] = ADC1->DR & 0xFFF;
+            ufAdcSampleBuffer[usAdcSampleIndex] = (float32_t)(ADC1->DR & 0xFFF);
             ucAdcConversionComplete = 0;
 
             /* Start the next ADC conversion. */
@@ -100,11 +102,8 @@ void vInitAudio( void )
     NVIC_InitTypeDef        NVIC_InitStruct;
     TIM_TimeBaseInitTypeDef TIM_InitStructure;
 
-    /* Initialize variables for fast fourier transform. */
-    arm_rfft_fast_instance_f32 S;
-
     /* Initialize the fast fourier transform. */
-    (void) arm_rfft_fast_init_f32( &S, 256 );
+    (void) arm_rfft_fast_init_f32( &S, FFT_SIZE );
 
     /* Enable the GPIO and ADC clocks. */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
@@ -114,7 +113,7 @@ void vInitAudio( void )
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     /* init ADCs in independent mode, div clock by two */
     ADC_CommonInitStructure.ADC_Mode = ADC_Mode_Independent;
@@ -133,7 +132,7 @@ void vInitAudio( void )
     ADC_InitStructure.ADC_NbrOfConversion = 1;
     ADC_Init(ADC1, &ADC_InitStructure);
 
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 1, ADC_SampleTime_480Cycles);
+    ADC_RegularChannelConfig(ADC1, ADC_Channel_12, 1, ADC_SampleTime_480Cycles);
 
     /* Enable ADC end of conversion interrupts */
     ADC_ITConfig(ADC1, ADC_IT_EOC, ENABLE);

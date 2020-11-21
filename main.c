@@ -49,7 +49,7 @@
 
 /* Task stack sizes. */
 #define configUPDATE_LEDS_STACK_SIZE            configMINIMAL_STACK_SIZE
-#define configCREATE_PATTERN_STACK_SIZE         configMINIMAL_STACK_SIZE
+#define configCREATE_PATTERN_STACK_SIZE         (configMINIMAL_STACK_SIZE * 10)
 
 /* Task Handles. */
 extern TaskHandle_t xUpdateLedsHandle;
