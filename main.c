@@ -65,7 +65,7 @@ int main(void)
     /* Initialize all four LEDs built into the starter kit */
     STM_EVAL_LEDInit( LED3 );       // Update LEDs stack overflow (ORG)
     STM_EVAL_LEDInit( LED4 );       // Create Pattern stack overflow (GRN)
-    STM_EVAL_LEDInit( LED5 );
+    STM_EVAL_LEDInit( LED5 );       // Sample timer complete before ADC conversion (RED)
     STM_EVAL_LEDInit( LED6 );
 
     /* Initialize the individually addressable LEDs. */
@@ -76,7 +76,7 @@ int main(void)
 
     /* Spawn the tasks. */
     /*           Task,                  Task Name,          Stack Size,                             parameters,     priority,                           task handle */
-    xTaskCreate( vUpdateLedStrip,       "UpdateLeds",       configUPDATE_LEDS_STACK_SIZE,           NULL,           mainUPDATE_LEDS_PRIORITY,            &xUpdateLedsHandle );
+    xTaskCreate( vUpdateLedStrip,       "UpdateLeds",       configUPDATE_LEDS_STACK_SIZE,           NULL,           mainUPDATE_LEDS_PRIORITY,           &xUpdateLedsHandle );
     xTaskCreate( vCreatePattern,        "CreatePattern",    configCREATE_PATTERN_STACK_SIZE,        NULL,           mainCREATE_PATTERN_PRIORITY,        &xCreatePatternHandle );
 
     /* Start the scheduler. */

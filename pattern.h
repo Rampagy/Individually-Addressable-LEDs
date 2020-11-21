@@ -136,6 +136,9 @@ void vGetRandPix(uint8_t* ucPix, uint16_t usNumPixels);
 /* Get LED buffer from other file (leds.c). */
 extern volatile uint8_t ucLeds[NUMBER_OF_LEDS][COLOR_CHANNELS];
 
+/* Get ADC buffer full from other file (audio.c). */
+extern uint8_t ucAdcBufferFull;
+
 /*-----------------------------------------------------------*/
 
 #endif

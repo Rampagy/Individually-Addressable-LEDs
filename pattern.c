@@ -39,7 +39,7 @@ void vCreatePattern( void * pvParameters  )
     xLastWakeTime = xTaskGetTickCount();
 
     /* Local variable for calculating the pattern. */
-    patterns_t eCurrentPattern = FIRE_SPARKS; // ulGetRandVal() % LAST_PATTERN;
+    patterns_t eCurrentPattern = RGB_AUDIO; // ulGetRandVal() % LAST_PATTERN;
     uint32_t ulPatternCount = 0;
 
     while ( 1 )
@@ -111,10 +111,28 @@ void vCreatePattern( void * pvParameters  )
   */
 void vRgbAudio ( const uint32_t ulPatternCount )
 {
+    /* Start sampling the ADC's. */
+    ADC_SoftwareStartConv( ADC1 );
+
+    /* Start the 44.1 khz sample timer. */
+    TIM12->CNT = 0;
+    TIM_Cmd( TIM12, ENABLE );
+
     if ( ulPatternCount == 0 )
     {
         vFillStrip( 0x00, 0x00, 0x00 );
     }
+
+    /* Wait until the ADC buffer is full (~5.8ms). */
+    while ( ucAdcBufferFull != 1 ) ;
+
+    /* Reset the Adc buffer full flag. */
+    ucAdcBufferFull = 0;
+
+    /** @TODO: Perform FFT. */
+
+    /** @TODO: Write frequency data to LEDs. */
+
 }
 /*-----------------------------------------------------------*/
 

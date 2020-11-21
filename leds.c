@@ -106,6 +106,11 @@ void DMA1_Stream0_IRQHandler()
 
     if( DMA_GetFlagStatus( DMA1_Stream0, DMA_FLAG_TCIF0 ) )
     {
+        /* Clear DMA interrupt flags */
+        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_TCIF0 );
+        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_HTIF0 );
+        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_FEIF0 );
+
         /* Disable timer 4 */
         TIM_Cmd( TIM4, DISABLE );
 
@@ -114,11 +119,6 @@ void DMA1_Stream0_IRQHandler()
 
         /* Reset the B6 pin to off. */
         GPIOB->ODR &= ~( 0x01 << 6 );
-
-        /* Clear DMA interrupt flags */
-        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_TCIF0 );
-        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_HTIF0 );
-        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_FEIF0 );
     }
 
     /* Re-enable interrupts and other tasks. */

@@ -1272,9 +1272,6 @@
         <name>$PROJ_DIR$\pattern.h</name>
     </file>
     <file>
-        <name>$PROJ_DIR$\readme.txt</name>
-    </file>
-    <file>
         <name>$PROJ_DIR$\stm32f4xx_it.c</name>
     </file>
 </project>
