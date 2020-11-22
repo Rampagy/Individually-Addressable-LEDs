@@ -1,6 +1,6 @@
-# FreeRTOS Simple Example
+# Individually Addressable LEDs
 
-Example code using FreeRTOS to control individually addressable LEDs (SK6812).
+Example code using FreeRTOS to control individually addressable LEDs (SK6812).  This project also experiments with the DSP onboard the STM32F4-Discovery via audio syncing.
 
 https://youtu.be/5Bn3eNN9Ki0
 
