@@ -49,6 +49,10 @@ DMA1 Stream 0: Transfer duty cycles to PWM module.
 ADC1 Channel 12: Samples audio voltage data
 ```
 
+## Future Work
+
+1.  Update ADC sampling to use DMA
+
 ## Resources
 
 https://www.st.com/content/ccc/resource/technical/layouts_and_diagrams/schematic_pack/group1/60/36/18/8c/71/30/45/dc/MB997-F407VGT6-E01_Schematic/files/MB997-F407VGT6-E01_Schematic.pdf/jcr:content/translations/en.MB997-F407VGT6-E01_Schematic.pdf

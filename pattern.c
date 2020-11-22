@@ -120,27 +120,25 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     /* Scaling vector. */
     float32_t ufScalingVector[FFT_SIZE/2] = { 0.0F };
 
-    /* DC offset has a different scaling. */
-    ufScalingVector[0] = 1.0 / FFT_SIZE;
-    for (uint16_t i = 1; i < (FFT_SIZE/2); i++)
-    {
-        /* I do not know where these scalings come from. */
-        ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
-    }
-
     /* Start sampling the ADC's. */
     ADC_SoftwareStartConv( ADC1 );
 
-    /* Start the 44.1 khz sample timer. */
+    /* Start the 44.1 kHz sample timer. */
     TIM12->CNT = 0;
     TIM_Cmd( TIM12, ENABLE );
 
-    if ( ulPatternCount == 0 )
+    /* DC offset has a different scaling than the non-zero frequencies. */
+    ufScalingVector[0] = 1.0 / FFT_SIZE;
+    for (uint16_t i = 1; i < (FFT_SIZE/2); i++)
     {
-        vFillStrip( 0x00, 0x00, 0x00 );
+        /* I do not know where these scalings come from, just that they work. */
+        ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
     }
 
-    /* Wait until the ADC buffer is full (~5.8ms). */
+    /* Reset LED strip every loop through. */
+    vFillStrip( 0x00, 0x00, 0x00 );
+
+    /* Wait until the ADC buffer is full (~2.9ms). */
     while ( ucAdcBufferFull != 1 ) ;
 
     /* Reset the Adc buffer full flag. */
@@ -155,10 +153,10 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     //    ufAdcSampleBuffer[i] = 10*arm_sin_f32( 2.0*3.14159F*i/8.0 ) + 50;
     //}
 
-    /* Perform real FFT (nobody understand complex numbers anyways). */
+    /* Perform real FFT (nobody understands complex numbers anyways). */
     arm_rfft_fast_f32( &S, ufAdcSampleBuffer, ufComplexFFT, 0 );
 
-    /* Save DC offset into temporary variable becuase arm_cmplx_mag_f32 clear is out. */
+    /* Save DC offset into temporary variable because arm_cmplx_mag_f32 clears it out. */
     float32_t temp = ufComplexFFT[0];
 
     /* Output of FFT is always complex, so convert to magnitude. */
@@ -179,7 +177,7 @@ void vRgbAudio ( const uint32_t ulPatternCount )
       *     by FFT_SIZE/2 or ADC_SAMPLES/4.
       *
       * The frequency that corresponds to each index can be determined by:
-      *     Frequency = (Idx+1) * SamplingFrequency / FFT_SIZE
+      *     Frequency = (Idx) * SamplingFrequency / FFT_SIZE
       *
       * For this project it equates to ~689Hz per index.
       *     689.1 Hz = 44100 / 64

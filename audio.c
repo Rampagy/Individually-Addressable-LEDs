@@ -150,9 +150,9 @@ void vInitAudio( void )
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
 
     /* 44.1 kHz sample timer setup. */
-    TIM_InitStructure.TIM_Prescaler = 42U;
+    TIM_InitStructure.TIM_Prescaler = 42U; // Each tick is 1 us
     TIM_InitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_InitStructure.TIM_Period = ( ( (uint32_t)ADC_SAMPLES * ( 42000000U / TIM_InitStructure.TIM_Prescaler ) ) / SAMPLING_FREQUENCY ) - SAMPLING_COMPUTATION_TIME_TIM9_CYCLES; // Each tick is 1 us
+    TIM_InitStructure.TIM_Period = ( ( (uint32_t)ADC_SAMPLES * ( 42000000U / TIM_InitStructure.TIM_Prescaler ) ) / SAMPLING_FREQUENCY ) - SAMPLING_COMPUTATION_TIME_TIM9_CYCLES;
     TIM_InitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseInit(TIM12, &TIM_InitStructure);
 
