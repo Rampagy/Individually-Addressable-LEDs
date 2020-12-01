@@ -40,7 +40,7 @@ void ADC_IRQHandler( void )
 void TIM8_BRK_TIM12_IRQHandler( void )
 {
     /* Disable interrupts and other tasks from running during this interrupt. */
-    //UBaseType_t uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+    UBaseType_t uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 
     if ( TIM_GetITStatus( TIM12, TIM_IT_Update ) != RESET )
     {
@@ -81,7 +81,7 @@ void TIM8_BRK_TIM12_IRQHandler( void )
     }
 
     /* Re-enable interrupts and other tasks. */
-    //taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
+    taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
 }
 /*-----------------------------------------------------------*/
 

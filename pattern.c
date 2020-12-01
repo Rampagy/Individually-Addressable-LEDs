@@ -125,6 +125,7 @@ void vRgbAudio ( const uint32_t ulPatternCount )
 
     /* FFT max variables */
     float32_t ufMaxFFTMag = 0.0F;
+    float32_t ufDCOffset = 0.0F;
     uint32_t usMaxFFTIdx = 0U;
 
     /* Start the 44.1 kHz sample timer. */
@@ -140,7 +141,7 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     }
 
     /* Reset LED strip every loop through. */
-    vFillStrip( 0x00, 0x00, 0x00 );
+    //vFillStrip( 0x00, 0x00, 0x00 );
 
     /* Wait until the ADC buffer is full (~2.9ms). */
     while ( ucAdcBufferFull != 1 ) ;
@@ -173,9 +174,10 @@ void vRgbAudio ( const uint32_t ulPatternCount )
      * I have no idea where these scalings come from, but it works. */
     arm_mult_f32( ufFourierFrequency, ufScalingVector, ufFourierFrequency, FFT_SIZE/2 );
 
-    /* Get the max FFT magnitude and it's index. */
+    /* Get the max FFT magnitude and its index. */
+    ufDCOffset = ufFourierFrequency[0];
     ufFourierFrequency[0] = 0.0F;
-    arm_max_f32( ufFourierFrequency, FFT_SIZE/2 - 1, &ufMaxFFTMag, &usMaxFFTIdx );
+    arm_max_f32( ufFourierFrequency, FFT_SIZE/2, &ufMaxFFTMag, &usMaxFFTIdx );
 
     /** @TODO: Make pattern based on frequency data.
       * @NOTE: ufFourierFrquency[0] is the dc offset.  To get the true dc offset
@@ -185,14 +187,105 @@ void vRgbAudio ( const uint32_t ulPatternCount )
       *     by FFT_SIZE/2 or ADC_SAMPLES/4.
       *
       * The frequency that corresponds to each index can be determined by:
-      *     Frequency = (Idx) * SamplingFrequency / FFT_SIZE
+      *     Frequency = Idx * SamplingFrequency / FFT_SIZE
       *
-      * For this project it equates to ~689Hz per index.
-      *     689.1 Hz = 44100 / 64
+      * For this project it equates to ~345Hz per index.
+      *     344.5 Hz = 44100 Hz / 128
       */
 
-    /* Clear out AdcSampleBuffer. */
-    for (uint16_t i = 0; i < ADC_SAMPLES; i++)
+    /* Divide the strip into 6 frequency sections:
+     * Freq < 350 Hz -> Red
+     * Freq < 700 Hz -> Green
+     * Freq < 1050 Hz -> Blue
+     * Freq < 1500 Hz -> Red
+     * Freq < 2500 Hz -> Green
+     * Freq < 10000 Hz ->Blue
+     */
+
+    for ( uint16_t i = 0; i < configRGB_AUDIO_SECTIONS; i++ )
+    {
+        uint16_t usLEDBrightness = 0U;
+        uint16_t usMaxFFTSectionMag = 0U;
+        uint16_t usMaxSectionFreq[configRGB_AUDIO_SECTIONS] = {
+            configRGB_AUDIO_SECTION_COLORS
+        };
+
+        /* Find max frequency within the allocated frequency for the section. */
+        for ( uint16_t j = 0; j < FFT_SIZE/2; j++ )
+        {
+            uint32_t ulIdxFreq = ( (uint32_t)j * SAMPLING_FREQUENCY ) / FFT_SIZE;
+            if ( ulIdxFreq <= usMaxSectionFreq[i] )
+            {
+                /* Order of evaluations is important here. */
+                if ( ( i == 0 ) ||
+                     ( ulIdxFreq > usMaxSectionFreq[i-1] ) )
+                {
+                    if ( ufFourierFrequency[j] > usMaxFFTSectionMag )
+                    {
+                        usMaxFFTSectionMag = (uint16_t)ufFourierFrequency[j];
+                    }
+                }
+            }
+            else
+            {
+                /* If we are no longer under the section limit then there's no
+                 * point in continuing the search. */
+                break;
+            }
+        }
+
+        /* If the magnitude is above thge threshold set the LED brightness. */
+        if ( usMaxFFTSectionMag > configRGB_AUDIO_BRIGHTNESS_THRESHOLD )
+        {
+            if ( usMaxFFTSectionMag > configRGB_AUDIO_MAX_BRIGHTNESS )
+            {
+                usMaxFFTSectionMag = configRGB_AUDIO_MAX_BRIGHTNESS;
+            }
+
+            usLEDBrightness = (uint16_t)( ( usMaxFFTSectionMag * 256 ) / configRGB_AUDIO_MAX_BRIGHTNESS );
+        }
+
+        /* Set the LED color. */
+        for ( uint16_t j = 0; j < configRGB_AUDIO_LEDS_PER_SECTION; j++ )
+        {
+            uint16_t usLedIdx = i * configRGB_AUDIO_LEDS_PER_SECTION + j;
+
+            /* Decrement the LEDs current color. */
+            vSetLed( usLedIdx,
+                    ( ucGetLed( usLedIdx, RED ) >= configRGB_AUDIO_FADE_SPEED ) * ( ucGetLed( usLedIdx, RED ) - configRGB_AUDIO_FADE_SPEED ),      // R
+                    ( ucGetLed( usLedIdx, GRN ) >= configRGB_AUDIO_FADE_SPEED ) * ( ucGetLed( usLedIdx, GRN ) - configRGB_AUDIO_FADE_SPEED ),      // G
+                    ( ucGetLed( usLedIdx, BLU ) >= configRGB_AUDIO_FADE_SPEED ) * ( ucGetLed( usLedIdx, BLU ) - configRGB_AUDIO_FADE_SPEED ) );    // B
+
+            switch ( i % COLOR_CHANNELS )
+            {
+            default:
+            case 0:
+                /* Make this section RED. */
+                if ( usLEDBrightness > ucGetLed( usLedIdx, RED ) )
+                {
+                    vSetLed( usLedIdx, usLEDBrightness, 0, 0 );
+                }
+                break;
+            case 1:
+                /* Make this section GREEN. */
+                if ( usLEDBrightness > ucGetLed( usLedIdx, GRN ) )
+                {
+                    vSetLed( usLedIdx, 0, usLEDBrightness, 0 );
+                }
+                break;
+            case 2:
+                /* Make this section BLUE. */
+                if ( usLEDBrightness > ucGetLed( usLedIdx, BLU ) )
+                {
+                    vSetLed( usLedIdx, 0, 0, usLEDBrightness );
+                }
+                break;
+            }
+        }
+    }
+
+    /* Clear AdcSampleBuffer. */
+    for ( uint16_t i = 0; i < ADC_SAMPLES; i++ )
     {
         ufAdcSampleBuffer[i] = 0;
     }
@@ -539,7 +632,7 @@ void vSetLed( int16_t LED, int16_t R, int16_t G, int16_t B )
 {
     if ( ( LED < NUMBER_OF_LEDS ) && ( LED >= 0 ) )
     {
-        /* Satureate each color channel. */
+        /* Saturate each color channel. */
         G = ( G < 0 ) * 0 + ( G > 255 ) * 255 + ( ( G >= 0 ) && ( G <= 255 ) ) * G;
         R = ( R < 0 ) * 0 + ( R > 255 ) * 255 + ( ( R >= 0 ) && ( R <= 255 ) ) * R;
         B = ( B < 0 ) * 0 + ( B > 255 ) * 255 + ( ( B >= 0 ) && ( B <= 255 ) ) * B;

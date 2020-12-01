@@ -19,7 +19,7 @@
 #define configAURORA_BOREALIS_TIME_MS                               ( 60000 )
 #define configLASER_TIME_MS                                         ( 30000 )
 #define configFIRE_SPARKS_TIME_MS                                   ( 60000 )
-#define configRGB_AUDIO_TIME_MS                                     ( 30000 )
+#define configRGB_AUDIO_TIME_MS                                     ( 120000 )
 
 /*-----------------------------------------------------------*/
 
@@ -70,6 +70,12 @@
 /*-----------------------------------------------------------*/
 
 /* RGB audio defines. */
+#define configRGB_AUDIO_SECTIONS                                    ( 3 )
+#define configRGB_AUDIO_SECTION_COLORS                              400U, 2500U, 10000U
+#define configRGB_AUDIO_LEDS_PER_SECTION                            ( NUMBER_OF_LEDS / configRGB_AUDIO_SECTIONS )
+#define configRGB_AUDIO_BRIGHTNESS_THRESHOLD                        ( 55 )
+#define configRGB_AUDIO_MAX_BRIGHTNESS                              ( 600 )
+#define configRGB_AUDIO_FADE_SPEED                                  ( 3 )
 
 /*-----------------------------------------------------------*/
 
