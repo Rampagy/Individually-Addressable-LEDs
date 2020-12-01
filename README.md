@@ -51,7 +51,7 @@ ADC1 Channel 12: Samples audio voltage data
 
 ## Future Work
 
-1.  Update ADC sampling to use DMA
+1.  Update ADC sampling to use double buffered DMA
 
 ## Resources
 

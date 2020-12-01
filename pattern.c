@@ -39,7 +39,11 @@ void vCreatePattern( void * pvParameters  )
     xLastWakeTime = xTaskGetTickCount();
 
     /* Local variable for calculating the pattern. */
-    patterns_t eCurrentPattern = RGB_AUDIO; // ulGetRandVal() % LAST_PATTERN;
+#if ( configALL == 1 ) || ( configNO_AUDIO == 1 )
+    patterns_t eCurrentPattern = (patterns_t)0;
+#elif ( configONLY_AUDIO == 1 )
+    patterns_t eCurrentPattern = (patterns_t)( AUDIO_PATTERNS + 1 );
+#endif
     uint32_t ulPatternCount = 0;
 
     while ( 1 )
@@ -86,6 +90,13 @@ void vCreatePattern( void * pvParameters  )
             /* Check for next pattern. */
             vCheckNextPattern( &ulPatternCount, configRGB_AUDIO_TIME_MS, &eCurrentPattern );
             break;
+
+        case AUDIO_TRAIN:
+            /* Create audio train pattern. */
+            vAudioTrain( ulPatternCount );
+
+            /* Check for next pattern. */
+            vCheckNextPattern( &ulPatternCount, configAUDIO_TRAIN_TIME_MS, &eCurrentPattern );
         }
 
         /* Check the stack size. */
@@ -104,12 +115,11 @@ void vCreatePattern( void * pvParameters  )
 /*-----------------------------------------------------------*/
 
 
-
 /**
   * @brief  Create RGB audio pattern.
   * @retval None
   */
-void vRgbAudio ( const uint32_t ulPatternCount )
+void vAudioTrain ( const uint32_t ulPatternCount )
 {
     /* Create array for storing frequency information. */
     float32_t ufComplexFFT[ADC_SAMPLES] = { 0.0F };
@@ -139,9 +149,6 @@ void vRgbAudio ( const uint32_t ulPatternCount )
         /* I do not know where these scalings come from, just that they work. */
         ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
     }
-
-    /* Reset LED strip every loop through. */
-    //vFillStrip( 0x00, 0x00, 0x00 );
 
     /* Wait until the ADC buffer is full (~2.9ms). */
     while ( ucAdcBufferFull != 1 ) ;
@@ -193,15 +200,145 @@ void vRgbAudio ( const uint32_t ulPatternCount )
       *     344.5 Hz = 44100 Hz / 128
       */
 
-    /* Divide the strip into 6 frequency sections:
-     * Freq < 350 Hz -> Red
-     * Freq < 700 Hz -> Green
-     * Freq < 1050 Hz -> Blue
-     * Freq < 1500 Hz -> Red
-     * Freq < 2500 Hz -> Green
-     * Freq < 10000 Hz ->Blue
-     */
+    /* Shift all of the LEDs one further down the strip. */
+    for ( uint16_t i = NUMBER_OF_LEDS-1; i > 0; i-- )
+    {
+        vSetLed( i,
+                (int16_t)ucGetLed( i-1, RED ),
+                (int16_t)ucGetLed( i-1, GRN ),
+                (int16_t)ucGetLed( i-1, BLU ) );
+    }
 
+    uint16_t usSectionFreq[configRGB_AUDIO_SECTIONS] = { 0U };
+    uint16_t usMaxSectionFreq[configRGB_AUDIO_SECTIONS] = {
+        configRGB_AUDIO_SECTION_COLORS
+    };
+
+    /* Determine the LED brightnesses. */
+    for ( uint16_t i = 1; i < FFT_SIZE / 2; i++ )
+    {
+        /* Get the frequency associated to the index. */
+        uint32_t ulIdxFreq = ( (uint32_t)i * SAMPLING_FREQUENCY ) / FFT_SIZE;
+
+        /* Scroll through each frequency band and see if it fits into any of them. */
+        for ( uint16_t j = 0; j < configAUDIO_TRAIN_NUM_FREQUENCIES; j++ )
+        {
+            /* Order of evaluation is important here. */
+            if ( ( ulIdxFreq <= usMaxSectionFreq[j] ) &&
+                 ( ( j == 0 ) || ( ulIdxFreq > usMaxSectionFreq[j-1] ) ) )
+            {
+                /* This frequency is in the band, track the max for this band. */
+                if ( ufFourierFrequency[i] > usSectionFreq[j] )
+                {
+                    usSectionFreq[j] = (uint16_t)ufFourierFrequency[i];
+                }
+            }
+        }
+    }
+
+    /* Set the first LED to its new color. */
+    int16_t R = (int16_t)( ( (int32_t)( usSectionFreq[0] - configAUDIO_TRAIN_BRIGHTNESS_OFFSET ) * 256 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    int16_t G = (int16_t)( ( (int32_t)( usSectionFreq[1] - configAUDIO_TRAIN_BRIGHTNESS_OFFSET ) * 256 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    int16_t B = (int16_t)( ( (int32_t)( usSectionFreq[2] - configAUDIO_TRAIN_BRIGHTNESS_OFFSET ) * 256 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+
+    vSetLed( 0, R, G, B );
+
+    /* Clear AdcSampleBuffer. */
+    for ( uint16_t i = 0; i < ADC_SAMPLES; i++ )
+    {
+        ufAdcSampleBuffer[i] = 0;
+    }
+}
+/*-----------------------------------------------------------*/
+
+
+
+/**
+  * @brief  Create RGB audio pattern.
+  * @retval None
+  */
+void vRgbAudio ( const uint32_t ulPatternCount )
+{
+    /* Create array for storing frequency information. */
+    float32_t ufComplexFFT[ADC_SAMPLES] = { 0.0F };
+
+    /* The real FFT does not provide symmetry so divide FFT_SIZE by 2. */
+    float32_t ufFourierFrequency[FFT_SIZE/2] = { 0.0F };
+
+    /* Scaling vector. */
+    float32_t ufScalingVector[FFT_SIZE/2] = { 0.0F };
+
+    /* Start sampling the ADC's. */
+    ADC_SoftwareStartConv( ADC1 );
+
+    /* FFT max variables */
+    float32_t ufMaxFFTMag = 0.0F;
+    float32_t ufDCOffset = 0.0F;
+    uint32_t usMaxFFTIdx = 0U;
+
+    /* Start the 44.1 kHz sample timer. */
+    TIM12->CNT = 0;
+    TIM_Cmd( TIM12, ENABLE );
+
+    /* DC offset has a different scaling than the non-zero frequencies. */
+    ufScalingVector[0] = 1.0 / FFT_SIZE;
+    for (uint16_t i = 1; i < (FFT_SIZE/2); i++)
+    {
+        /* I do not know where these scalings come from, just that they work. */
+        ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
+    }
+
+    /* Wait until the ADC buffer is full (~2.9ms). */
+    while ( ucAdcBufferFull != 1 ) ;
+
+    /* Reset the Adc buffer full flag. */
+    ucAdcBufferFull = 0;
+
+    /* This can be uncommented to test the fft logic. */
+    //for (uint16_t i = 0; i < ADC_SAMPLES; i++)
+    //{
+    //    /* Frequency magnitude at index 10 (4410 Hz) should be the max at 10
+    //     * with a DC offset of 50.
+    //     */
+    //    ufAdcSampleBuffer[i] = 10*arm_sin_f32( 2.0*3.14159F*i/8.0 ) + 50;
+    //}
+
+    /* Perform real FFT (nobody understands complex numbers anyways). */
+    arm_rfft_fast_f32( &S, ufAdcSampleBuffer, ufComplexFFT, 0 );
+
+    /* Save DC offset into temporary variable because arm_cmplx_mag_f32 clears it out. */
+    float32_t temp = ufComplexFFT[0];
+
+    /* Output of FFT is always complex, so convert to magnitude. */
+    arm_cmplx_mag_f32( ufComplexFFT, ufFourierFrequency, FFT_SIZE );
+
+    /* Complex magnitude is not applicable to the DC offset. */
+    ufFourierFrequency[0] = temp;
+
+    /* Rescale ufFourierFrequency to its true amplitudes.
+     * I have no idea where these scalings come from, but it works. */
+    arm_mult_f32( ufFourierFrequency, ufScalingVector, ufFourierFrequency, FFT_SIZE/2 );
+
+    /* Get the max FFT magnitude and its index. */
+    ufDCOffset = ufFourierFrequency[0];
+    ufFourierFrequency[0] = 0.0F;
+    arm_max_f32( ufFourierFrequency, FFT_SIZE/2, &ufMaxFFTMag, &usMaxFFTIdx );
+
+    /** @TODO: Make pattern based on frequency data.
+      * @NOTE: ufFourierFrquency[0] is the dc offset.  To get the true dc offset
+      *     you have to divide this number by FFT_SIZE or ADC_SAMPLES.
+      * @NOTE: The rest of the values are scaled by FFT_SIZE/2 or ADC_SAMPLES/4.
+      *     So to get the true magnitude of the frequencies you have to divide
+      *     by FFT_SIZE/2 or ADC_SAMPLES/4.
+      *
+      * The frequency that corresponds to each index can be determined by:
+      *     Frequency = Idx * SamplingFrequency / FFT_SIZE
+      *
+      * For this project it equates to ~345Hz per index.
+      *     344.5 Hz = 44100 Hz / 128
+      */
+
+    /* Divide the strip into different sections. */
     for ( uint16_t i = 0; i < configRGB_AUDIO_SECTIONS; i++ )
     {
         uint16_t usLEDBrightness = 0U;
@@ -356,7 +493,24 @@ void vCheckNextPattern( uint32_t* ulPatternCount, const uint32_t ulPatternLength
     if ( *ulPatternCount >= ulPatternLength )
     {
         /* Switch to new pattern and reset the counter. */
-        *eCurrentPattern = ( patterns_t )( ( *eCurrentPattern + 1 ) % LAST_PATTERN );
+        *eCurrentPattern = ( patterns_t )( *eCurrentPattern + 1 );
+        if ( *eCurrentPattern == AUDIO_PATTERNS )
+        {
+            *eCurrentPattern = ( patterns_t )( *eCurrentPattern + 1 );
+        }
+
+#if ( configALL == 1 )
+        *eCurrentPattern = ( patterns_t )( *eCurrentPattern % LAST_PATTERN );
+#elif ( configNO_AUDIO == 1 )
+        *eCurrentPattern = ( patterns_t )( *eCurrentPattern % AUDIO_PATTERNS );
+#elif ( configONLY_AUDIO == 1 )
+        *eCurrentPattern = ( patterns_t )( *eCurrentPattern % LAST_PATTERN );
+        if ( *eCurrentPattern == 0 )
+        {
+            *eCurrentPattern = ( patterns_t )( AUDIO_PATTERNS + 1 );
+        }
+#endif
+
         *ulPatternCount = 0;
     }
 }

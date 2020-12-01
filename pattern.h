@@ -13,13 +13,25 @@
 
 /*-----------------------------------------------------------*/
 
+/* Set the LEDs mode. */
+#define configNO_AUDIO                                              ( 0 )
+#define configONLY_AUDIO                                            ( 0 )
+#define configALL                                                   ( 1 )
+
+#if ( ( configNO_AUDIO + configONLY_AUDIO + configALL ) != 1 )
+#error "Only one config can be defined: configNO_AUDIO or configONLY_AUDIO or configALL"
+#endif
+
+/*-----------------------------------------------------------*/
+
 /* Pattern length times. */
 #define configPATTERN_TASK_TIME_MS                                  ( 10 )
 #define configRAINBOW_CROSSFADE_TIME_MS                             ( 45000 )
 #define configAURORA_BOREALIS_TIME_MS                               ( 60000 )
 #define configLASER_TIME_MS                                         ( 30000 )
 #define configFIRE_SPARKS_TIME_MS                                   ( 60000 )
-#define configRGB_AUDIO_TIME_MS                                     ( 120000 )
+#define configRGB_AUDIO_TIME_MS                                     ( 30000 )
+#define configAUDIO_TRAIN_TIME_MS                                   ( 120000 )
 
 /*-----------------------------------------------------------*/
 
@@ -71,7 +83,7 @@
 
 /* RGB audio defines. */
 #define configRGB_AUDIO_SECTIONS                                    ( 3 )
-#define configRGB_AUDIO_SECTION_COLORS                              400U, 2500U, 10000U
+#define configRGB_AUDIO_SECTION_COLORS                              400U, 1000U, 6250U
 #define configRGB_AUDIO_LEDS_PER_SECTION                            ( NUMBER_OF_LEDS / configRGB_AUDIO_SECTIONS )
 #define configRGB_AUDIO_BRIGHTNESS_THRESHOLD                        ( 55 )
 #define configRGB_AUDIO_MAX_BRIGHTNESS                              ( 600 )
@@ -79,13 +91,24 @@
 
 /*-----------------------------------------------------------*/
 
+/* Audio train defines. */
+#define configAUDIO_TRAIN_NUM_FREQUENCIES                           ( 3 )
+#define configAUDIO_TRAIN_FEQUENCIES                                400U, 1500U, 4000U
+#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 800 )
+#define configAUDIO_TRAIN_BRIGHTNESS_OFFSET                         ( 0 )
+
+/*-----------------------------------------------------------*/
+
+
 /* Patterns */
 typedef enum {
     RAINBOW_CROSSFADE,
     AURORA_BOREALIS,
     LASER,
     FIRE_SPARKS,
+    AUDIO_PATTERNS,
     RGB_AUDIO,
+    AUDIO_TRAIN,
     LAST_PATTERN
 } patterns_t;
 
@@ -136,7 +159,10 @@ void vRgbAudio ( const uint32_t ulPatternCount );
 void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G,uint8_t B );
 
 /* Get some randomly colored pixels. */
-void vGetRandPix(uint8_t* ucPix, uint16_t usNumPixels);
+void vGetRandPix( uint8_t* ucPix, uint16_t usNumPixels );
+
+/* Create an audio train pattern. */
+void vAudioTrain( const uint32_t usPatternCount );
 
 /*-----------------------------------------------------------*/
 
