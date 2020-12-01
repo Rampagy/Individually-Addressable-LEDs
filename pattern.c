@@ -123,6 +123,10 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     /* Start sampling the ADC's. */
     ADC_SoftwareStartConv( ADC1 );
 
+    /* FFT max variables */
+    float32_t ufMaxFFTMag = 0.0F;
+    uint32_t usMaxFFTIdx = 0U;
+
     /* Start the 44.1 kHz sample timer. */
     TIM12->CNT = 0;
     TIM_Cmd( TIM12, ENABLE );
@@ -168,6 +172,10 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     /* Rescale ufFourierFrequency to its true amplitudes.
      * I have no idea where these scalings come from, but it works. */
     arm_mult_f32( ufFourierFrequency, ufScalingVector, ufFourierFrequency, FFT_SIZE/2 );
+
+    /* Get the max FFT magnitude and it's index. */
+    ufFourierFrequency[0] = 0.0F;
+    arm_max_f32( ufFourierFrequency, FFT_SIZE/2 - 1, &ufMaxFFTMag, &usMaxFFTIdx );
 
     /** @TODO: Make pattern based on frequency data.
       * @NOTE: ufFourierFrquency[0] is the dc offset.  To get the true dc offset
