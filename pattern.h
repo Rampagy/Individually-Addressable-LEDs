@@ -15,8 +15,8 @@
 
 /* Set the LEDs mode. */
 #define configNO_AUDIO                                              ( 0 )
-#define configONLY_AUDIO                                            ( 0 )
-#define configALL                                                   ( 1 )
+#define configONLY_AUDIO                                            ( 1 )
+#define configALL                                                   ( 0 )
 
 #if ( ( configNO_AUDIO + configONLY_AUDIO + configALL ) != 1 )
 #error "Only one config can be defined: configNO_AUDIO or configONLY_AUDIO or configALL"
@@ -168,9 +168,6 @@ void vAudioTrain( const uint32_t usPatternCount );
 
 /* Get LED buffer from other file (leds.c). */
 extern volatile uint8_t ucLeds[NUMBER_OF_LEDS][COLOR_CHANNELS];
-
-/* Get ADC buffer full from other file (audio.c). */
-extern uint8_t ucAdcBufferFull;
 
 /* Get Adc sample buffer from other file (audio.c). */
 extern float32_t ufAdcSampleBuffer[ADC_SAMPLES];

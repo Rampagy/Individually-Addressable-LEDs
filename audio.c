@@ -2,28 +2,40 @@
 
 /* Initialize variables for fast fourier transform. */
 arm_rfft_fast_instance_f32 S;
-float32_t ufAdcSampleBuffer[ADC_SAMPLES] = { 0.0 };
-uint16_t usAdcSampleIndex = 0;
-uint8_t  ucAdcConversionComplete = 0;
-uint8_t  ucAdcBufferFull = 0;
+float32_t ufAdcSampleBuffer[ADC_SAMPLES] = { 0.0F };
+uint16_t __usAdcIntermediateSampleBuffer[ADC_SAMPLES] = { 0U };
+
 
 /**
-  * @brief  Interrupt to handle the end of the ADC conversion.
+  * @brief  Interrupt to handle the end of the DMA stream from ADCs.
   * @param  None
   * @retval None
   */
-void ADC_IRQHandler( void )
+void DMA2_Stream0_IRQHandler( void )
 {
     /* Disable interrupts and other tasks from running during this interrupt. */
     UBaseType_t uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 
-    if ( ADC_GetITStatus( ADC1, ADC_IT_EOC ) != RESET )
+    /* DMA Stream Half Transfer interrupt */
+    if( DMA_GetITStatus( DMA2_Stream0, DMA_IT_HTIF0 ) )
     {
-        /* Clear ADC end of conversion interrupt flag */
-        ADC_ClearITPendingBit( ADC1, ADC_IT_EOC );
+        /* Clear DMA Stream Half Transfer interrupt pending bit */
+        DMA_ClearITPendingBit( DMA2_Stream0, DMA_IT_HTIF0 );
 
-        /* Set the conversion complete flag to 1. */
-        ucAdcConversionComplete = 1;
+        // Add code here to process first half of buffer (ping)
+    }
+
+    /* DMA Stream Transfer Complete interrupt */
+    if( DMA_GetITStatus( DMA2_Stream0, DMA_IT_TCIF0 ) )
+    {
+        /* Clear DMA Stream Transfer Complete interrupt pending bit */
+        DMA_ClearITPendingBit( DMA2_Stream0, DMA_IT_TCIF0 );
+
+        /* Copy data from the intermediate buffer to the final buffer. */
+        for ( uint16_t i = 0; i < ADC_SAMPLES; i++ )
+        {
+            ufAdcSampleBuffer[i] = (float32_t)__usAdcIntermediateSampleBuffer[i];
+        }
     }
 
     /* Re-enable interrupts and other tasks. */
@@ -31,59 +43,6 @@ void ADC_IRQHandler( void )
 }
 /*-----------------------------------------------------------*/
 
-
-/**
-  * @brief  Interrupt to handle the 44.1 kHz sampling.
-  * @param  None
-  * @retval None
-  */
-void TIM8_BRK_TIM12_IRQHandler( void )
-{
-    /* Disable interrupts and other tasks from running during this interrupt. */
-    UBaseType_t uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
-
-    if ( TIM_GetITStatus( TIM12, TIM_IT_Update ) != RESET )
-    {
-        /* Reset interrupt flag. */
-        TIM_ClearITPendingBit( TIM12, TIM_IT_Update );
-
-        /* Debugging Purposes. */
-        GPIO_ToggleBits( GPIOD, 1 << 3 );
-
-        /* If ADC conversion is complete save the value */
-        if ( ucAdcConversionComplete )
-        {
-            /* Save the ADC sample. */
-            ufAdcSampleBuffer[usAdcSampleIndex] = (float32_t)(ADC1->DR & 0xFFF) - (float32_t)(0xFFF / 2);
-            ucAdcConversionComplete = 0;
-
-            /* Start the next ADC conversion. */
-            ADC_SoftwareStartConv( ADC1 );
-        }
-        else
-        {
-            /* Turn on the red LED to indicate the ADC sample timer was
-             * completed before the ADC conversion.
-             */
-            STM_EVAL_LEDOn( LED5 );
-        }
-
-        /* Increment index counter. */
-        usAdcSampleIndex++;
-
-        /* Clear index counter on rollover. */
-        if ( usAdcSampleIndex >= ADC_SAMPLES )
-        {
-            usAdcSampleIndex = 0;
-            ucAdcBufferFull = 1;
-            TIM_Cmd( TIM12, DISABLE );
-        }
-    }
-
-    /* Re-enable interrupts and other tasks. */
-    taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
-}
-/*-----------------------------------------------------------*/
 
 
 /**
@@ -100,9 +59,9 @@ void vInitAudio( void )
     ADC_InitTypeDef         ADC_InitStructure;
     ADC_CommonInitTypeDef   ADC_CommonInitStructure;
     NVIC_InitTypeDef        NVIC_InitStructure;
+    DMA_InitTypeDef         DMA_InitStructure;
 
     /* Define TIM init structures. */
-    NVIC_InitTypeDef        NVIC_InitStruct;
     TIM_TimeBaseInitTypeDef TIM_InitStructure;
 
     /* Initialize the fast fourier transform. */
@@ -111,6 +70,8 @@ void vInitAudio( void )
     /* Enable the GPIO and ADC clocks. */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE); // 84 MHz
 
     /* Initialize for ADC1 on PC4 using IN14. */
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
@@ -127,58 +88,77 @@ void vInitAudio( void )
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
 
+    /* Enable the DMA Stream IRQ Channel */
+    NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream0_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+    /* Clear the structure for later uses. */
+    NVIC_InitStructure = ( const NVIC_InitTypeDef ){ 0 };
+
+    /* TIM2 sample timer setup (44.1 kHz). */
+    TIM_InitStructure.TIM_Prescaler = 2U;
+    TIM_InitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    TIM_InitStructure.TIM_Period = ( ( 84000000U / ( TIM_InitStructure.TIM_Prescaler + 1 ) ) / SAMPLING_FREQUENCY ) - 1;
+    TIM_InitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    TIM_TimeBaseInit(TIM2, &TIM_InitStructure);
+
+    /* TIM2 TRGO selection */
+    TIM_SelectOutputTrigger(TIM2, TIM_TRGOSource_Update); // ADC_ExternalTrigConv_T2_TRGO
+
+    /* TIM2 enable counter */
+    TIM_Cmd(TIM2, ENABLE);
+
+    /* DMA1 channel 0 configuration. */
+    DMA_DeInit( DMA2_Stream0 );
+
+    DMA_InitStructure.DMA_Channel = DMA_Channel_0;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&ADC1->DR;                             // physical address of register to load into memory
+    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&__usAdcIntermediateSampleBuffer[0];      // physical address of memeory to be loaded
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;                                     // shift data from peripheral to memeory
+    DMA_InitStructure.DMA_BufferSize = ADC_SAMPLES;
+    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;                                     // automatically increase buffer index
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;                 // 16 bits
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;                         // 16 bits
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;                                             // Always keep this thing running
+    DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
+    DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Enable;
+    DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_HalfFull;
+    DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
+    DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+    DMA_Init(DMA2_Stream0, &DMA_InitStructure);
+
+    /* Enable DMA stream transfer complete interrupt. */
+    DMA_ITConfig(DMA2_Stream0, DMA_IT_TC | DMA_IT_HT, ENABLE);
+    DMA_Cmd(DMA2_Stream0, ENABLE);
+
     /* Init ADCs in independent mode, div clock by two */
     ADC_CommonInitStructure.ADC_Mode = ADC_Mode_Independent;
     ADC_CommonInitStructure.ADC_Prescaler = ADC_Prescaler_Div2;
-    ADC_CommonInitStructure.ADC_DMAAccessMode = ADC_DMAAccessMode_Disabled;
+    ADC_CommonInitStructure.ADC_DMAAccessMode = ADC_DMAAccessMode_Disabled;    // Not sure if this is needed
     ADC_CommonInitStructure.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
     ADC_CommonInit(&ADC_CommonInitStructure);
 
     /* init ADC1: 12bit, single-conversion */
     ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
-    ADC_InitStructure.ADC_ScanConvMode = DISABLE;
-    ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
-    ADC_InitStructure.ADC_ExternalTrigConvEdge = 0;
-    ADC_InitStructure.ADC_ExternalTrigConv = 0;
+    ADC_InitStructure.ADC_ScanConvMode = DISABLE;               // 1 channel
+    ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;         // Conversions triggered
+    ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_Rising;
+    ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T2_TRGO;
     ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
     ADC_InitStructure.ADC_NbrOfConversion = 1;
     ADC_Init(ADC1, &ADC_InitStructure);
 
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_14, 1, ADC_SampleTime_480Cycles);
+    /* Enable DMA Disable selection. */
+    ADC1->CR2 |= ADC_CR2_DDS;
 
-    /* Enable ADC end of conversion interrupts */
-    ADC_ITConfig(ADC1, ADC_IT_EOC, ENABLE);
-
-    /* Configure ADC interrupt (higher numbers preempt lower numbers). */
-    NVIC_InitStructure.NVIC_IRQChannel = ADC_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
-    NVIC_Init(&NVIC_InitStructure);
-
+    ADC_RegularChannelConfig( ADC1, ADC_Channel_14, 1, ADC_SampleTime_480Cycles );
+    ADC_DMACmd( ADC1, ENABLE );
     ADC_Cmd( ADC1, ENABLE );
 
-    /* Enable the timer clock (42MHz). */
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
-
-    /* 44.1 kHz sample timer setup. */
-    TIM_InitStructure.TIM_Prescaler = 2U;
-    TIM_InitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_InitStructure.TIM_Period = ( ( 84000000U / (TIM_InitStructure.TIM_Prescaler+1) ) / SAMPLING_FREQUENCY ) - 1;
-    TIM_InitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-    TIM_TimeBaseInit(TIM12, &TIM_InitStructure);
-
-    /* Reset interrupt flag. */
-    TIM_ClearITPendingBit( TIM12, TIM_IT_Update );
-
-    /* Timer 12 Interrupt Config */
-    NVIC_InitStruct.NVIC_IRQChannel = TIM8_BRK_TIM12_IRQn;
-    NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 0x05;
-    NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0x01;
-    NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStruct);
-
-    /* Enable interrupt. */
-    TIM_ITConfig(TIM12, TIM_IT_Update, ENABLE);
+    /* Start ADC1 Software Conversion */
+    ADC_SoftwareStartConv( ADC1 );
 }
 /*-----------------------------------------------------------*/

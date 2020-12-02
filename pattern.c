@@ -116,7 +116,7 @@ void vCreatePattern( void * pvParameters  )
 
 
 /**
-  * @brief  Create RGB audio pattern.
+  * @brief  Create audio train pattern.
   * @retval None
   */
 void vAudioTrain ( const uint32_t ulPatternCount )
@@ -130,17 +130,10 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     /* Scaling vector. */
     float32_t ufScalingVector[FFT_SIZE/2] = { 0.0F };
 
-    /* Start sampling the ADC's. */
-    ADC_SoftwareStartConv( ADC1 );
-
     /* FFT max variables */
     float32_t ufMaxFFTMag = 0.0F;
     float32_t ufDCOffset = 0.0F;
     uint32_t usMaxFFTIdx = 0U;
-
-    /* Start the 44.1 kHz sample timer. */
-    TIM12->CNT = 0;
-    TIM_Cmd( TIM12, ENABLE );
 
     /* DC offset has a different scaling than the non-zero frequencies. */
     ufScalingVector[0] = 1.0 / FFT_SIZE;
@@ -149,12 +142,6 @@ void vAudioTrain ( const uint32_t ulPatternCount )
         /* I do not know where these scalings come from, just that they work. */
         ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
     }
-
-    /* Wait until the ADC buffer is full (~2.9ms). */
-    while ( ucAdcBufferFull != 1 ) ;
-
-    /* Reset the Adc buffer full flag. */
-    ucAdcBufferFull = 0;
 
     /* This can be uncommented to test the fft logic. */
     //for (uint16_t i = 0; i < ADC_SAMPLES; i++)
@@ -242,12 +229,6 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     int16_t B = (int16_t)( ( (int32_t)( usSectionFreq[2] - configAUDIO_TRAIN_BRIGHTNESS_OFFSET ) * 256 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
 
     vSetLed( 0, R, G, B );
-
-    /* Clear AdcSampleBuffer. */
-    for ( uint16_t i = 0; i < ADC_SAMPLES; i++ )
-    {
-        ufAdcSampleBuffer[i] = 0;
-    }
 }
 /*-----------------------------------------------------------*/
 
@@ -268,17 +249,10 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     /* Scaling vector. */
     float32_t ufScalingVector[FFT_SIZE/2] = { 0.0F };
 
-    /* Start sampling the ADC's. */
-    ADC_SoftwareStartConv( ADC1 );
-
     /* FFT max variables */
     float32_t ufMaxFFTMag = 0.0F;
     float32_t ufDCOffset = 0.0F;
     uint32_t usMaxFFTIdx = 0U;
-
-    /* Start the 44.1 kHz sample timer. */
-    TIM12->CNT = 0;
-    TIM_Cmd( TIM12, ENABLE );
 
     /* DC offset has a different scaling than the non-zero frequencies. */
     ufScalingVector[0] = 1.0 / FFT_SIZE;
@@ -287,12 +261,6 @@ void vRgbAudio ( const uint32_t ulPatternCount )
         /* I do not know where these scalings come from, just that they work. */
         ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
     }
-
-    /* Wait until the ADC buffer is full (~2.9ms). */
-    while ( ucAdcBufferFull != 1 ) ;
-
-    /* Reset the Adc buffer full flag. */
-    ucAdcBufferFull = 0;
 
     /* This can be uncommented to test the fft logic. */
     //for (uint16_t i = 0; i < ADC_SAMPLES; i++)
@@ -419,12 +387,6 @@ void vRgbAudio ( const uint32_t ulPatternCount )
                 break;
             }
         }
-    }
-
-    /* Clear AdcSampleBuffer. */
-    for ( uint16_t i = 0; i < ADC_SAMPLES; i++ )
-    {
-        ufAdcSampleBuffer[i] = 0;
     }
 }
 /*-----------------------------------------------------------*/

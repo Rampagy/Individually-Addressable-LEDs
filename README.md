@@ -24,8 +24,8 @@ The idea is to use 2 different tasks to manage the LEDS. The tasks are listed be
 #### Timers
 
 ```
+Timer 2: 44.1 kHz timer for sampling audio data 
 Timer 4: LED Data Line
-Timer 12: 44.1 kHz timer for sampling audio data 
 ```
 
 #### GPIO:
@@ -70,6 +70,8 @@ https://www.iar.com/support/resources/articles/using-iar-embedded-workbench-for-
 https://stm32f4-discovery.net/2014/10/stm32f4-fft-example/
 
 https://www.keil.com/pack/doc/CMSIS/DSP/html/group__RealFFT.html#ga5d2ec62f3e35575eba467d09ddcd98b5
+
+https://community.st.com/s/question/0D50X00009XkibiSAB/stm32f207-adctimerdma-poor-peripheral-library-examples
 
 ## Notes
 Use `xTaskCreateStatic` to create a task with the stack in a static location
