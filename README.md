@@ -24,15 +24,15 @@ The idea is to use 2 different tasks to manage the LEDS. The tasks are listed be
 #### Timers
 
 ```
-Timer 2: 44.1 kHz timer for sampling audio data 
+Timer 2: 44.1 kHz timer for sampling audio voltage data 
 Timer 4: LED Data Line
 ```
 
 #### GPIO:
 
 ```
-C4: Audio voltage data
-B6: LED Data
+C4: Audio voltage data in
+B6: LED Data out
 D12: LED4 (GRN) - Indicates stack overflow for vCreatePattern
 D13: LED3 (ORG) - Indicates stack overflow for vUpdateLedStrip
 D14: LED5 (RED) - Indicates ADC conversion took longer than desired (44.1 kHz) sample time.
@@ -42,16 +42,14 @@ D15: LED6 (BLU)
 #### DMA:
 ```
 DMA1 Stream 0: Transfer duty cycles to PWM module.
+DMA2 Stream 0: Transfer ADC1->DR to buffer.
 ```
 
 #### ADC's:
 ```
-ADC1 Channel 12: Samples audio voltage data
+ADC1 Channel 14: Samples audio voltage data
 ```
 
-## Future Work
-
-1.  Update ADC sampling to use double buffered DMA
 
 ## Resources
 
