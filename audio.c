@@ -154,7 +154,7 @@ void vInitAudio( void )
     /* Enable DMA Disable selection. */
     ADC1->CR2 |= ADC_CR2_DDS;
 
-    ADC_RegularChannelConfig( ADC1, ADC_Channel_14, 1, ADC_SampleTime_480Cycles );
+    ADC_RegularChannelConfig( ADC1, ADC_Channel_14, 1, ADC_SampleTime_15Cycles );
     ADC_DMACmd( ADC1, ENABLE );
     ADC_Cmd( ADC1, ENABLE );
 

@@ -16,7 +16,7 @@
 
 /*-----------------------------------------------------------*/
 
-#define ADC_SAMPLES                                 256U
+#define ADC_SAMPLES                                 2048U
 #define FFT_SIZE                                    (ADC_SAMPLES / 2)
 #define SAMPLING_FREQUENCY                          44100U
 

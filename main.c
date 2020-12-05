@@ -48,8 +48,8 @@
 #define mainCREATE_PATTERN_PRIORITY             ( tskIDLE_PRIORITY + 1UL )
 
 /* Task stack sizes. */
-#define configUPDATE_LEDS_STACK_SIZE            configMINIMAL_STACK_SIZE
-#define configCREATE_PATTERN_STACK_SIZE         (configMINIMAL_STACK_SIZE * 10)
+#define configUPDATE_LEDS_STACK_SIZE            (configMINIMAL_STACK_SIZE * 10)
+#define configCREATE_PATTERN_STACK_SIZE         (configMINIMAL_STACK_SIZE * 40)
 
 /* Task Handles. */
 extern TaskHandle_t xUpdateLedsHandle;

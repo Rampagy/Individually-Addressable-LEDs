@@ -10,6 +10,8 @@ static uint16_t usLedDutyCycleBuffer[TOTAL_PERIODS] = { 0 };
 /* Task handle. */
 TaskHandle_t xUpdateLedsHandle = NULL;
 
+/* Available stack size. */
+UBaseType_t xLedsAvailableStack = 0;
 
 /**
   * @brief  Task that initiates the PWM stream to the individually addressable LEDs.
@@ -20,7 +22,6 @@ void vUpdateLedStrip( void * pvParameters  )
 {
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = 10;
-    UBaseType_t xAvailableStack = 0;
 
     /* Initialize the xLastWakeTime variable with the current time. */
      xLastWakeTime = xTaskGetTickCount();
@@ -68,9 +69,9 @@ void vUpdateLedStrip( void * pvParameters  )
         TIM_Cmd(TIM4, ENABLE);
 
         /* Check the stack size. */
-        xAvailableStack = uxTaskGetStackHighWaterMark( xUpdateLedsHandle );
+        xLedsAvailableStack = uxTaskGetStackHighWaterMark( xUpdateLedsHandle );
 
-        if (xAvailableStack <= 10)
+        if (xLedsAvailableStack <= 10)
         {
             /* Turn orangle LED on if stack overflow is imminent/detected. */
             STM_EVAL_LEDOn( LED3 );

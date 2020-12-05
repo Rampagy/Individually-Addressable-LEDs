@@ -18,6 +18,9 @@
 #define configONLY_AUDIO                                            ( 1 )
 #define configALL                                                   ( 0 )
 
+/* Put the strip into debug audio mode.*/
+#define configAUDIO_DEBUG
+
 #if ( ( configNO_AUDIO + configONLY_AUDIO + configALL ) != 1 )
 #error "Only one config can be defined: configNO_AUDIO or configONLY_AUDIO or configALL"
 #endif
@@ -31,7 +34,7 @@
 #define configLASER_TIME_MS                                         ( 30000 )
 #define configFIRE_SPARKS_TIME_MS                                   ( 60000 )
 #define configRGB_AUDIO_TIME_MS                                     ( 30000 )
-#define configAUDIO_TRAIN_TIME_MS                                   ( 120000 )
+#define configAUDIO_TRAIN_TIME_MS                                   ( 10000 )
 
 /*-----------------------------------------------------------*/
 
@@ -82,12 +85,10 @@
 /*-----------------------------------------------------------*/
 
 /* RGB audio defines. */
-#define configRGB_AUDIO_SECTIONS                                    ( 3 )
-#define configRGB_AUDIO_SECTION_COLORS                              400U, 1000U, 6250U
+#define configRGB_AUDIO_SECTIONS                                    ( 4 )
+#define configRGB_AUDIO_SECTION_COLORS                              70U, 225U, 700U, 1750U, //4375U //, 11125U, 20000U
 #define configRGB_AUDIO_LEDS_PER_SECTION                            ( NUMBER_OF_LEDS / configRGB_AUDIO_SECTIONS )
-#define configRGB_AUDIO_BRIGHTNESS_THRESHOLD                        ( 55 )
-#define configRGB_AUDIO_MAX_BRIGHTNESS                              ( 600 )
-#define configRGB_AUDIO_FADE_SPEED                                  ( 3 )
+#define configRGB_AUDIO_MAX_BRIGHTNESS                              ( 19000 )
 
 /*-----------------------------------------------------------*/
 
