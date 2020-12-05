@@ -40,11 +40,14 @@ void vCreatePattern( void * pvParameters  )
     /* Initialize the xLastWakeTime variable with the current time. */
     xLastWakeTime = xTaskGetTickCount();
 
+    /* Initialize start time.*/
+    uint16_t usStartTime = TIM12->CNT;
+
     /* Local variable for calculating the pattern. */
 #if ( configALL == 1 ) || ( configNO_AUDIO == 1 )
     patterns_t eCurrentPattern = (patterns_t)0;
 #elif ( configONLY_AUDIO == 1 )
-    patterns_t eCurrentPattern = (patterns_t)AUDIO_TRAIN; // ( AUDIO_PATTERNS + 1 );
+    patterns_t eCurrentPattern = (patterns_t)(RGB_AUDIO); //(AUDIO_TRAIN); // ( AUDIO_PATTERNS + 1 );
 #endif
     uint32_t ulPatternCount = 0;
 
@@ -87,7 +90,8 @@ void vCreatePattern( void * pvParameters  )
 
         case RGB_AUDIO:
             /* Create RGB audio pattern. */
-            vRgbAudio ( ulPatternCount );
+            /** @TODO: This function call is overruinning the task rate by 1000%. Need to fix. */
+            //vRgbAudio ( ulPatternCount );
 
             /* Check for next pattern. */
             vCheckNextPattern( &ulPatternCount, configRGB_AUDIO_TIME_MS, &eCurrentPattern );
@@ -110,8 +114,17 @@ void vCreatePattern( void * pvParameters  )
             STM_EVAL_LEDOn( LED4 );
         }
 
+        /* Update the high water mark for task length. */
+        if ( (uint16_t)TIM12->CNT - usStartTime > xDebugStats.usPatternClocks )
+        {
+            xDebugStats.usPatternClocks = (uint16_t)TIM12->CNT - usStartTime;
+        }
+
         /* Wait for the next cycle. */
         vTaskDelayUntil( &xLastWakeTime, configPATTERN_TASK_TIME_MS );
+
+        /* Initialize the start time. */
+        usStartTime = TIM12->CNT;
     }
 }
 /*-----------------------------------------------------------*/
@@ -154,8 +167,12 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     //    ufAdcSampleBuffer[i] = 10*arm_sin_f32( 2.0*3.14159F*i/8.0 ) + 50;
     //}
 
-    /* Perform real FFT (nobody understands complex numbers anyways). */
+    /* Perform real FFT (nobody understands complex numbers anyways).
+     * Enter critical here to ensure that the AdcSampleBuffer is not
+     * updated in the middle of the FFT.*/
+    taskENTER_CRITICAL();
     arm_rfft_fast_f32( &S, ufAdcSampleBuffer, ufComplexFFT, 0 );
+    taskEXIT_CRITICAL();
 
     /* Save DC offset into temporary variable because arm_cmplx_mag_f32 clears it out. */
     float32_t temp = ufComplexFFT[0];
@@ -291,8 +308,12 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     //    ufAdcSampleBuffer[i] = 10*arm_sin_f32( 2.0*3.14159F*i/8.0 ) + 50;
     //}
 
-    /* Perform real FFT (nobody understands complex numbers anyways). */
+    /* Perform real FFT (nobody understands complex numbers anyways).
+     * Enter critical here to ensure that the AdcSampleBuffer is not
+     * updated in the middle of the FFT.*/
+    taskENTER_CRITICAL();
     arm_rfft_fast_f32( &S, ufAdcSampleBuffer, ufComplexFFT, 0 );
+    taskEXIT_CRITICAL();
 
     /* Save DC offset into temporary variable because arm_cmplx_mag_f32 clears it out. */
     float32_t temp = ufComplexFFT[0];

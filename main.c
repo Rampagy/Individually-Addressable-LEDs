@@ -68,6 +68,9 @@ int main(void)
     STM_EVAL_LEDInit( LED5 );       // Sample timer complete before ADC conversion (RED)
     STM_EVAL_LEDInit( LED6 );
 
+    /* Initialize the debug timer. */
+    vInitDebug();
+
     /* Initialize the individually addressable LEDs. */
     vInitLeds();
 

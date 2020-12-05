@@ -24,7 +24,10 @@ void vUpdateLedStrip( void * pvParameters  )
     const TickType_t xFrequency = 10;
 
     /* Initialize the xLastWakeTime variable with the current time. */
-     xLastWakeTime = xTaskGetTickCount();
+    xLastWakeTime = xTaskGetTickCount();
+
+    /* Initialize start time.*/
+    uint16_t usStartTime = TIM12->CNT;
 
      /* Create variable to hold the buffer index. */
      uint16_t usBufferIndex = 0;
@@ -77,8 +80,17 @@ void vUpdateLedStrip( void * pvParameters  )
             STM_EVAL_LEDOn( LED3 );
         }
 
+        /* Update the high water mark for task length. */
+        if ( (uint16_t)TIM12->CNT - usStartTime > xDebugStats.usPatternClocks )
+        {
+            xDebugStats.usUpdateLEDsClocks = (uint16_t)TIM12->CNT - usStartTime;
+        }
+
         /* Wait for the next cycle. */
          vTaskDelayUntil( &xLastWakeTime, xFrequency );
+
+        /* Initialize the start time. */
+        usStartTime = TIM12->CNT;
     }
 }
 /*-----------------------------------------------------------*/
@@ -142,10 +154,10 @@ void vInitLeds(void)
     NVIC_InitTypeDef NVIC_InitStructure;
 
     /* Enable the clock used for DMA. */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE); // 168 MHz
 
     /* Enable the clock used for GPIOB. */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE); // 168 MHz
 
     /* GPIO Configuration. */
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
@@ -158,7 +170,7 @@ void vInitLeds(void)
     /* Connect TIM4 pins to AF */
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_TIM4);
 
-    /* Enable the clock used for TIM4 (84MHz) */
+    /* Enable the clock used for TIM4 (42MHz) */
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 
     /* Time base configuration */

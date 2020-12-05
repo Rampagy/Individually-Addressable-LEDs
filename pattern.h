@@ -8,8 +8,12 @@
 #include "semphr.h"
 
 /* Peripheral includes. */
+#include "stm32f4xx_tim.h"
+
+/* User includes. */
 #include "leds.h"
 #include "audio.h"
+#include "debug.h"
 
 /*-----------------------------------------------------------*/
 
@@ -175,6 +179,9 @@ extern float32_t ufAdcSampleBuffer[ADC_SAMPLES];
 
 /* Get rfft instance from other file (audio.c). */
 extern arm_rfft_fast_instance_f32 S;
+
+/* Get debug stats from other file (debug.c) */
+extern xDebugStats_t xDebugStats;
 
 /*-----------------------------------------------------------*/
 

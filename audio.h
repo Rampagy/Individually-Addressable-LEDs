@@ -14,6 +14,9 @@
 #include "stm32f4xx_gpio.h"
 #include "stm32f4xx_tim.h"
 
+/* User includes. */
+#include "debug.h"
+
 /*-----------------------------------------------------------*/
 
 #define ADC_SAMPLES                                 2048U
@@ -23,5 +26,10 @@
 /*-----------------------------------------------------------*/
 
 void vInitAudio( void );
+
+/*-----------------------------------------------------------*/
+
+/* Get debug stats from other file (debug.c) */
+extern xDebugStats_t xDebugStats;
 
 #endif

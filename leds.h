@@ -16,6 +16,9 @@
 #include "stm32f4xx_rcc.h"
 #include "stm32f4xx_rng.h"
 
+/* User includes */
+#include "debug.h"
+
 /*-----------------------------------------------------------*/
 
 /* Defines for the SK6812 LEDs. */
@@ -24,20 +27,20 @@
 /* Number of color channels */
 #define COLOR_CHANNELS 3
 
-/* 105 cycles * (1 sec / 84,000,000 cycle ) = 1.25 usec */
-#define CLOCK_THRESH ( 105 - 1 )
+/* 52 cycles * (1 sec / 42,000,000 cycle ) = 1.25 usec */
+#define CLOCK_THRESH ( 52 )
 
-/* 25 cycles * (1 sec / 84,000,000 cycles) = 0.298 usec */
-#define LOW_THRESH ( 25 )
+/* 13 cycles * (1 sec / 42,000,000 cycles) = 0.310 usec */
+#define LOW_THRESH ( 13 )
 
-/* 50 cycles * (1 sec / 84,000,000 cycles) = 0.595 usec*/
+/* 25 cycles * (1 sec / 42,000,000 cycles) = 0.595 usec*/
 #define HIGH_THRESH ( 50 )
 
-/* 6720 cycles * (1 sec / 84,000,000 cycles) = 80.0 usec */
-#define RESET_CYCLES 6720
+/* 3360 cycles * (1 sec / 42,000,000 cycles) = 80.0 usec */
+#define RESET_CYCLES 3360
 
 /* RESET_CYCLES / CLOCK_THRESH = 64 */
-#define RESET_PERIODS 64
+#define RESET_PERIODS 65
 
 /* Number of PWM periods to send a whole LED strip.
 Number of LEDs * (Color Channels / LED) * (Bits / Color Channel) */
@@ -56,5 +59,10 @@ void vUpdateLedStrip( void * );
 
 /* Function for getting a random number. */
 uint32_t ulGetRandVal( void );
+
+/*-----------------------------------------------------------*/
+
+/* Get debug stats from other file (debug.c) */
+extern xDebugStats_t xDebugStats;
 
 #endif

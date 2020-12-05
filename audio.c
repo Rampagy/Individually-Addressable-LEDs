@@ -16,6 +16,10 @@ void DMA2_Stream0_IRQHandler( void )
     /* Disable interrupts and other tasks from running during this interrupt. */
     UBaseType_t uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 
+    /* Initialize start time.*/
+    static uint16_t usStartTime;
+    usStartTime = TIM12->CNT;
+
     /* DMA Stream Half Transfer interrupt */
     if( DMA_GetITStatus( DMA2_Stream0, DMA_IT_HTIF0 ) )
     {
@@ -36,6 +40,12 @@ void DMA2_Stream0_IRQHandler( void )
         {
             ufAdcSampleBuffer[i] = (float32_t)__usAdcIntermediateSampleBuffer[i];
         }
+    }
+
+    /* Update the high water mark for task length. */
+    if ( (uint16_t)TIM12->CNT - usStartTime > xDebugStats.usCopyADCsFromDMAClocks )
+    {
+        xDebugStats.usCopyADCsFromDMAClocks = (uint16_t)TIM12->CNT - usStartTime;
     }
 
     /* Re-enable interrupts and other tasks. */
@@ -68,10 +78,10 @@ void vInitAudio( void )
     (void) arm_rfft_fast_init_f32( &S, FFT_SIZE );
 
     /* Enable the GPIO and ADC clocks. */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE); // 84 MHz
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE); // 84 MHz
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE); // 168 MHz
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE); // 168 MHz
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE); // 42 MHz
 
     /* Initialize for ADC1 on PC4 using IN14. */
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -100,7 +110,7 @@ void vInitAudio( void )
     /* TIM2 sample timer setup (44.1 kHz). */
     TIM_InitStructure.TIM_Prescaler = 0;
     TIM_InitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_InitStructure.TIM_Period = ( ( 84000000U / ( TIM_InitStructure.TIM_Prescaler + 1 ) ) / SAMPLING_FREQUENCY ) - 1;
+    TIM_InitStructure.TIM_Period = ( ( 42000000U / ( TIM_InitStructure.TIM_Prescaler + 1 ) ) / SAMPLING_FREQUENCY ) - 1;
     TIM_InitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseInit(TIM2, &TIM_InitStructure);
 
