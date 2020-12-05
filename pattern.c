@@ -44,7 +44,7 @@ void vCreatePattern( void * pvParameters  )
 #if ( configALL == 1 ) || ( configNO_AUDIO == 1 )
     patterns_t eCurrentPattern = (patterns_t)0;
 #elif ( configONLY_AUDIO == 1 )
-    patterns_t eCurrentPattern = (patterns_t)( AUDIO_PATTERNS + 1 );
+    patterns_t eCurrentPattern = (patterns_t)AUDIO_TRAIN; // ( AUDIO_PATTERNS + 1 );
 #endif
     uint32_t ulPatternCount = 0;
 
@@ -130,7 +130,7 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     float32_t ufFourierFrequency[FFT_SIZE/2] = { 0.0F };
 
     /* Scaling vector. */
-    float32_t ufScalingVector[FFT_SIZE/2] = { 0.0F };
+    //float32_t ufScalingVector[FFT_SIZE/2] = { 0.0F };
 
     /* FFT max variables */
     float32_t ufMaxFFTMag = 0.0F;
@@ -138,12 +138,12 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     uint32_t usMaxFFTIdx = 0U;
 
     /* DC offset has a different scaling than the non-zero frequencies. */
-    ufScalingVector[0] = 1.0 / FFT_SIZE;
-    for (uint16_t i = 1; i < (FFT_SIZE/2); i++)
-    {
-        /* I do not know where these scalings come from, just that they work. */
-        ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
-    }
+    //ufScalingVector[0] = 1.0 / FFT_SIZE;
+    //for (uint16_t i = 1; i < (FFT_SIZE/2); i++)
+    //{
+    //    /* I do not know where these scalings come from, just that they work. */
+    //    ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
+    //}
 
     /* This can be uncommented to test the fft logic. */
     //for (uint16_t i = 0; i < ADC_SAMPLES; i++)
@@ -168,7 +168,7 @@ void vAudioTrain ( const uint32_t ulPatternCount )
 
     /* Rescale ufFourierFrequency to its true amplitudes.
      * I have no idea where these scalings come from, but it works. */
-    arm_mult_f32( ufFourierFrequency, ufScalingVector, ufFourierFrequency, FFT_SIZE/2 );
+    //arm_mult_f32( ufFourierFrequency, ufScalingVector, ufFourierFrequency, FFT_SIZE/2 );
 
     /* Get the max FFT magnitude and its index. */
     ufDCOffset = ufFourierFrequency[0];
@@ -190,47 +190,63 @@ void vAudioTrain ( const uint32_t ulPatternCount )
       */
 
     /* Shift all of the LEDs one further down the strip. */
-    //for ( uint16_t i = NUMBER_OF_LEDS-1; i > 0; i-- )
-    //{
-    //    vSetLed( i,
-    //            (int16_t)ucGetLed( i-1, RED ),
-    //            (int16_t)ucGetLed( i-1, GRN ),
-    //            (int16_t)ucGetLed( i-1, BLU ) );
-    //}
-    //
-    //uint16_t usSectionFreq[configRGB_AUDIO_SECTIONS] = { 0U };
-    //uint16_t usMaxSectionFreq[configRGB_AUDIO_SECTIONS] = {
-    //    configRGB_AUDIO_SECTION_COLORS
-    //};
-    //
-    ///* Determine the LED brightnesses. */
-    //for ( uint16_t i = 1; i < FFT_SIZE / 2; i++ )
-    //{
-    //    /* Get the frequency associated to the index. */
-    //    uint32_t ulIdxFreq = ( (uint32_t)i * SAMPLING_FREQUENCY ) / FFT_SIZE;
-    //
-    //    /* Scroll through each frequency band and see if it fits into any of them. */
-    //    for ( uint16_t j = 0; j < configAUDIO_TRAIN_NUM_FREQUENCIES; j++ )
-    //    {
-    //        /* Order of evaluation is important here. */
-    //        if ( ( ulIdxFreq <= usMaxSectionFreq[j] ) &&
-    //             ( ( j == 0 ) || ( ulIdxFreq > usMaxSectionFreq[j-1] ) ) )
-    //        {
-    //            /* This frequency is in the band, track the max for this band. */
-    //            if ( ufFourierFrequency[i] > usSectionFreq[j] )
-    //            {
-    //                usSectionFreq[j] = (uint16_t)ufFourierFrequency[i];
-    //            }
-    //        }
-    //    }
-    //}
-    //
-    ///* Set the first LED to its new color. */
-    //int16_t R = (int16_t)( ( (int32_t)( usSectionFreq[0] - configAUDIO_TRAIN_BRIGHTNESS_OFFSET ) * 256 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    //int16_t G = (int16_t)( ( (int32_t)( usSectionFreq[1] - configAUDIO_TRAIN_BRIGHTNESS_OFFSET ) * 256 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    //int16_t B = (int16_t)( ( (int32_t)( usSectionFreq[2] - configAUDIO_TRAIN_BRIGHTNESS_OFFSET ) * 256 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    //
-    //vSetLed( 0, R, G, B );
+    for ( uint16_t i = NUMBER_OF_LEDS-1; i > 0; i-- )
+    {
+        vSetLed( i,
+                (int16_t)ucGetLed( i-1, RED ),
+                (int16_t)ucGetLed( i-1, GRN ),
+                (int16_t)ucGetLed( i-1, BLU ) );
+    }
+
+    uint16_t usSectionFreq[configAUDIO_TRAIN_NUM_FREQUENCIES] = { 0U };
+    uint16_t usMaxSectionFreq[configAUDIO_TRAIN_NUM_FREQUENCIES] = {
+        configAUDIO_TRAIN_FEQUENCIES
+    };
+
+    /* Determine the LED brightnesses. */
+    for ( uint16_t i = 0; i < configAUDIO_TRAIN_NUM_FREQUENCIES; i++ )
+    {
+        /* Scroll through each frequency band and see if it fits into any of them. */
+        for ( uint16_t j = 1; j < FFT_SIZE / 2; j++ )
+        {
+            /* Get the frequency associated to the index. */
+            uint32_t ulIdxFreq = ( (uint32_t)j * SAMPLING_FREQUENCY ) / FFT_SIZE;
+
+            /* Find max frequency within the allocated range for the section. */
+            if ( ulIdxFreq <= usMaxSectionFreq[i] )
+            {
+                /* Order of evaluations is important here. */
+                if ( ( i == 0 ) ||
+                     ( ulIdxFreq > usMaxSectionFreq[i-1] ) )
+                {
+                    /* Chekc if the frequency is in the band. If so, track the max for this band. */
+                    if ( ufFourierFrequency[j] > usSectionFreq[i] )
+                    {
+                        usSectionFreq[i] = (uint16_t)ufFourierFrequency[j];
+                    }
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    /* Set the first LED to its new color. */
+    //int16_t R = (int16_t)( ( usSectionFreq[0] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    //int16_t G = (int16_t)( ( usSectionFreq[1] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    //int16_t B = (int16_t)( ( usSectionFreq[2] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+
+    if ( ufFourierFrequency[2] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[2] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
+    if ( ufFourierFrequency[15] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[15] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
+    if ( ufFourierFrequency[35] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[35] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
+
+    int16_t R = (int16_t)( ( ufFourierFrequency[2] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    int16_t G = (int16_t)( ( ufFourierFrequency[15] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    int16_t B = (int16_t)( ( ufFourierFrequency[35] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+
+    vSetLed( 0, R, G, B );
 }
 /*-----------------------------------------------------------*/
 
@@ -326,7 +342,7 @@ void vRgbAudio ( const uint32_t ulPatternCount )
         float32_t ufAveFFTSectionMag = 0.0F;
         uint16_t usNumSectionFrequencies = 0U;
 
-        /* Find max frequency within the allocated range for the section. */
+        /* Find average frequency within the allocated range for the section. */
         for ( uint16_t j = 1; j < FFT_SIZE/2; j++ )
         {
             uint32_t ulIdxFreq = ( (uint32_t)j * SAMPLING_FREQUENCY ) / FFT_SIZE;

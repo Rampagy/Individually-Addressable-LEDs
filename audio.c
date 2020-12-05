@@ -74,7 +74,7 @@ void vInitAudio( void )
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE); // 84 MHz
 
     /* Initialize for ADC1 on PC4 using IN14. */
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
@@ -98,7 +98,7 @@ void vInitAudio( void )
     NVIC_InitStructure = ( const NVIC_InitTypeDef ){ 0 };
 
     /* TIM2 sample timer setup (44.1 kHz). */
-    TIM_InitStructure.TIM_Prescaler = 2U;
+    TIM_InitStructure.TIM_Prescaler = 0;
     TIM_InitStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_InitStructure.TIM_Period = ( ( 84000000U / ( TIM_InitStructure.TIM_Prescaler + 1 ) ) / SAMPLING_FREQUENCY ) - 1;
     TIM_InitStructure.TIM_ClockDivision = TIM_CKD_DIV1;

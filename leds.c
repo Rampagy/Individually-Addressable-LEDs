@@ -71,7 +71,7 @@ void vUpdateLedStrip( void * pvParameters  )
         /* Check the stack size. */
         xLedsAvailableStack = uxTaskGetStackHighWaterMark( xUpdateLedsHandle );
 
-        if (xLedsAvailableStack <= 10)
+        if (xLedsAvailableStack <= 20)
         {
             /* Turn orangle LED on if stack overflow is imminent/detected. */
             STM_EVAL_LEDOn( LED3 );
