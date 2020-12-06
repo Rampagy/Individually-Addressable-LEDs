@@ -35,7 +35,7 @@ C4: Audio voltage data in
 B6: LED Data out
 D12: LED4 (GRN) - Indicates stack overflow for vCreatePattern
 D13: LED3 (ORG) - Indicates stack overflow for vUpdateLedStrip
-D14: LED5 (RED) - Indicates ADC conversion took longer than desired (44.1 kHz) sample time.
+D14: LED5 (RED)
 D15: LED6 (BLU)
 ```
 

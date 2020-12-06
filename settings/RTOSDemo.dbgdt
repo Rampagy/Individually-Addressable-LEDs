@@ -1245,7 +1245,7 @@
                     <item>usSectionFreq</item>
                     <item>SystemCoreClock</item>
                     <item>ClockFrequencies</item>
-                    <item></item>
+                    <item />
                 </expressions>
                 <col-names>
                     <item>Expression</item>
