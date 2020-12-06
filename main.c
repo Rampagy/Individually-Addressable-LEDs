@@ -36,6 +36,7 @@
 #include "leds.h"
 #include "pattern.h"
 #include "audio.h"
+#include "stm32f4xx_rcc.h"
 
 /* Hardware and starter kit includes. */
 #include "arm_comm.h"
@@ -59,6 +60,13 @@ extern TaskHandle_t xCreatePatternHandle;
 
 int main(void)
 {
+    /* Remove the secret clock doubler.... */
+    RCC->CFGR &= ~RCC_CFGR_PPRE1;
+    RCC->CFGR &= ~RCC_CFGR_PPRE2;
+
+    RCC->CFGR |= RCC_CFGR_PPRE1_DIV8;
+    RCC->CFGR |= RCC_CFGR_PPRE2_DIV4;
+
     /* Update the MCU and peripheral clock frequencies */
     SystemCoreClockUpdate();
 

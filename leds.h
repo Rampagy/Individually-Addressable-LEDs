@@ -30,14 +30,14 @@
 /* 52 cycles * (1 sec / 42,000,000 cycle ) = 1.25 usec */
 #define CLOCK_THRESH ( 52 )
 
-/* 13 cycles * (1 sec / 42,000,000 cycles) = 0.310 usec */
+/* 13 cycles * (1 sec / 42,000,000 cycles) = 0.309 usec */
 #define LOW_THRESH ( 13 )
 
-/* 25 cycles * (1 sec / 42,000,000 cycles) = 0.595 usec*/
-#define HIGH_THRESH ( 50 )
+/* 50 cycles * (1 sec / 42,000,000 cycles) = 0.595 usec*/
+#define HIGH_THRESH ( 25 )
 
 /* 3360 cycles * (1 sec / 42,000,000 cycles) = 80.0 usec */
-#define RESET_CYCLES 3360
+#define RESET_CYCLES ( 3360 )
 
 /* RESET_CYCLES / CLOCK_THRESH = 64 */
 #define RESET_PERIODS 65

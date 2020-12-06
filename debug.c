@@ -19,8 +19,8 @@ void vInitDebug( void )
 
     /* Time base configuration */
     TIM_TimeBaseStructure.TIM_Period = 65535U;
-    TIM_TimeBaseStructure.TIM_Prescaler = 63U;
-    TIM_TimeBaseStructure.TIM_ClockDivision = 0U;
+    TIM_TimeBaseStructure.TIM_Prescaler = 41U;
+    TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit( TIM12, &TIM_TimeBaseStructure );
 

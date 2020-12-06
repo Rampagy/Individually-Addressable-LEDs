@@ -20,12 +20,17 @@
 /*-----------------------------------------------------------*/
 
 #define ADC_SAMPLES                                 2048U
-#define FFT_SIZE                                    (ADC_SAMPLES / 2)
+#define CFFT_SIZE                                   (ADC_SAMPLES / 2)
+#define RFFT_SIZE                                   (CFFT_SIZE / 2)
 #define SAMPLING_FREQUENCY                          44100U
 
 /*-----------------------------------------------------------*/
 
+/* Initialize peripherals used in audio processing. */
 void vInitAudio( void );
+
+/* Function for performing an FFT. */
+void vPerformFFT( float32_t* ufFourierFrequency );
 
 /*-----------------------------------------------------------*/
 

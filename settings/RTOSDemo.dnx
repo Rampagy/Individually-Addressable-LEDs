@@ -12,7 +12,7 @@
         <ByteLimit>50</ByteLimit>
     </Stack>
     <DebugChecksum>
-        <Checksum>340091567</Checksum>
+        <Checksum>136877748</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -178,24 +178,12 @@
         <mode>0</mode>
     </DisassembleMode>
     <Breakpoints2>
-        <Count>0</Count>
+        <Bp0>_ 0 "EMUL_CODE" "{$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c}.774.1" 0 0 1 "" 0 "" 0</Bp0>
+        <Bp1>_ 0 "EMUL_CODE" "{$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c}.805.1" 0 0 1 "" 0 "" 0</Bp1>
+        <Count>2</Count>
     </Breakpoints2>
     <Aliases>
-        <A0>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\misc.c" ""</A0>
-        <A1>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_exti.c" ""</A1>
-        <A2>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_gpio.c" ""</A2>
-        <A3>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c" ""</A3>
-        <A4>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_syscfg.c" ""</A4>
-        <A5>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\startup\system_stm32f4xx.c" ""</A5>
-        <A6>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\stm32f4xx_it.c" ""</A6>
-        <A7>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\list.c" ""</A7>
-        <A8>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\portable\IAR\ARM_CM4F\port.c" ""</A8>
-        <A9>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\portable\IAR\ARM_CM4F\portasm.s" ""</A9>
-        <A10>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\portable\MemMang\heap_2.c" ""</A10>
-        <A11>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\queue.c" ""</A11>
-        <A12>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\tasks.c" ""</A12>
-        <A13>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\timers.c" ""</A13>
-        <Count>14</Count>
+        <Count>0</Count>
         <SuppressDialog>0</SuppressDialog>
     </Aliases>
 </settings>

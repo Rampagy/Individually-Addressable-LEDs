@@ -176,7 +176,7 @@ void vInitLeds(void)
     /* Time base configuration */
     TIM_TimeBaseStructure.TIM_Period = CLOCK_THRESH;
     TIM_TimeBaseStructure.TIM_Prescaler = 0;
-    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+    TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 
     TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
@@ -217,7 +217,7 @@ void vInitLeds(void)
 
     /* Set DMA interrupt when buffer transfers are complete. */
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream0_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configMAX_SYSCALL_INTERRUPT_PRIORITY + 2U;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 

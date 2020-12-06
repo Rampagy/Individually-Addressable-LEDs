@@ -56,6 +56,71 @@ void DMA2_Stream0_IRQHandler( void )
 
 
 /**
+  * @brief  Perform FFT.
+  * @param  Variable to store the resulting FFT into.
+  * @retval None
+  */
+void vPerformFFT( float32_t* ufFourierFrequency )
+{
+    /** @NOTE: ufFourierFrquency[0] is the dc offset.  To get the true dc offset
+      *     you have to divide this number by FFT_SIZE or ADC_SAMPLES.
+      * @NOTE: The rest of the values are scaled by FFT_SIZE/2 or ADC_SAMPLES/4.
+      *     So to get the true magnitude of the frequencies you have to divide
+      *     by FFT_SIZE/2 or ADC_SAMPLES/4.
+      *
+      * The frequency that corresponds to each index can be determined by:
+      *     Frequency = Idx * SamplingFrequency / FFT_SIZE
+      *
+      * For this project it equates to ~345Hz per index.
+      *     344.5 Hz = 44100 Hz / 128
+      */
+
+    /* Create array for storing frequency information. */
+    float32_t ufComplexFFT[CFFT_SIZE] = { 0.0F };
+
+    /* DC offset has a different scaling than the non-zero frequencies. */
+    //ufScalingVector[0] = 1.0 / FFT_SIZE;
+    //for (uint16_t i = 1; i < (FFT_SIZE/2); i++)
+    //{
+    //    /* I do not know where these scalings come from, just that they work. */
+    //    ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
+    //}
+
+    /* This can be uncommented to test the fft logic. */
+    //for (uint16_t i = 0; i < ADC_SAMPLES; i++)
+    //{
+    //    /* Frequency magnitude at index 10 (4410 Hz) should be the max at 10
+    //     * with a DC offset of 50.
+    //     */
+    //    ufAdcSampleBuffer[i] = 10*arm_sin_f32( 2.0*3.14159F*i/8.0 ) + 50;
+    //}
+
+    /* Perform real FFT (nobody understands complex numbers anyways).
+     * Enter critical here to ensure that the AdcSampleBuffer is not
+     * updated in the middle of the FFT.*/
+    taskENTER_CRITICAL();
+    arm_rfft_fast_f32( &S, ufAdcSampleBuffer, ufComplexFFT, 0 );
+    taskEXIT_CRITICAL();
+
+    /* Save DC offset into temporary variable because arm_cmplx_mag_f32 clears it out. */
+    //float32_t temp = ufComplexFFT[0];
+
+    /* Output of FFT is always complex, so convert to magnitude. */
+    arm_cmplx_mag_f32( ufComplexFFT, ufFourierFrequency, RFFT_SIZE );
+
+    /* Complex magnitude is not applicable to the DC offset. */
+    //ufFourierFrequency[0] = temp;
+
+    /* Rescale ufFourierFrequency to its true amplitudes.
+     * I have no idea where these scalings come from, but it works. */
+    float32_t scale = 1.0F / RFFT_SIZE;
+    arm_scale_f32( ufFourierFrequency, scale, ufFourierFrequency, RFFT_SIZE );
+}
+/*-----------------------------------------------------------*/
+
+
+
+/**
   * @brief  Initialization of the audio peripherals.
   * @param  None
   * @retval None
@@ -75,7 +140,7 @@ void vInitAudio( void )
     TIM_TimeBaseInitTypeDef TIM_InitStructure;
 
     /* Initialize the fast fourier transform. */
-    (void) arm_rfft_fast_init_f32( &S, FFT_SIZE );
+    (void) arm_rfft_fast_init_f32( &S, CFFT_SIZE );
 
     /* Enable the GPIO and ADC clocks. */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE); // 84 MHz
@@ -100,7 +165,7 @@ void vInitAudio( void )
 
     /* Enable the DMA Stream IRQ Channel */
     NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream0_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configMAX_SYSCALL_INTERRUPT_PRIORITY + 1U;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);

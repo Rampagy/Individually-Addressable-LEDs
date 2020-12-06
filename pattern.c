@@ -47,7 +47,7 @@ void vCreatePattern( void * pvParameters  )
 #if ( configALL == 1 ) || ( configNO_AUDIO == 1 )
     patterns_t eCurrentPattern = (patterns_t)0;
 #elif ( configONLY_AUDIO == 1 )
-    patterns_t eCurrentPattern = (patterns_t)(RGB_AUDIO); //(AUDIO_TRAIN); // ( AUDIO_PATTERNS + 1 );
+    patterns_t eCurrentPattern = (patterns_t)(AUDIO_TRAIN); // ( AUDIO_PATTERNS + 1 );
 #endif
     uint32_t ulPatternCount = 0;
 
@@ -136,75 +136,21 @@ void vCreatePattern( void * pvParameters  )
   */
 void vAudioTrain ( const uint32_t ulPatternCount )
 {
-    /* Create array for storing frequency information. */
-    float32_t ufComplexFFT[ADC_SAMPLES] = { 0.0F };
-
     /* The real FFT does not provide symmetry so divide FFT_SIZE by 2. */
-    float32_t ufFourierFrequency[FFT_SIZE/2] = { 0.0F };
-
-    /* Scaling vector. */
-    //float32_t ufScalingVector[FFT_SIZE/2] = { 0.0F };
+    float32_t ufFourierFrequency[RFFT_SIZE] = { 0.0F };
 
     /* FFT max variables */
     float32_t ufMaxFFTMag = 0.0F;
     float32_t ufDCOffset = 0.0F;
     uint32_t usMaxFFTIdx = 0U;
 
-    /* DC offset has a different scaling than the non-zero frequencies. */
-    //ufScalingVector[0] = 1.0 / FFT_SIZE;
-    //for (uint16_t i = 1; i < (FFT_SIZE/2); i++)
-    //{
-    //    /* I do not know where these scalings come from, just that they work. */
-    //    ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
-    //}
-
-    /* This can be uncommented to test the fft logic. */
-    //for (uint16_t i = 0; i < ADC_SAMPLES; i++)
-    //{
-    //    /* Frequency magnitude at index 10 (4410 Hz) should be the max at 10
-    //     * with a DC offset of 50.
-    //     */
-    //    ufAdcSampleBuffer[i] = 10*arm_sin_f32( 2.0*3.14159F*i/8.0 ) + 50;
-    //}
-
-    /* Perform real FFT (nobody understands complex numbers anyways).
-     * Enter critical here to ensure that the AdcSampleBuffer is not
-     * updated in the middle of the FFT.*/
-    taskENTER_CRITICAL();
-    arm_rfft_fast_f32( &S, ufAdcSampleBuffer, ufComplexFFT, 0 );
-    taskEXIT_CRITICAL();
-
-    /* Save DC offset into temporary variable because arm_cmplx_mag_f32 clears it out. */
-    float32_t temp = ufComplexFFT[0];
-
-    /* Output of FFT is always complex, so convert to magnitude. */
-    arm_cmplx_mag_f32( ufComplexFFT, ufFourierFrequency, FFT_SIZE );
-
-    /* Complex magnitude is not applicable to the DC offset. */
-    ufFourierFrequency[0] = temp;
-
-    /* Rescale ufFourierFrequency to its true amplitudes.
-     * I have no idea where these scalings come from, but it works. */
-    //arm_mult_f32( ufFourierFrequency, ufScalingVector, ufFourierFrequency, FFT_SIZE/2 );
+    /* Do the FFT. */
+    vPerformFFT( ufFourierFrequency );
 
     /* Get the max FFT magnitude and its index. */
     ufDCOffset = ufFourierFrequency[0];
     ufFourierFrequency[0] = 0.0F;
-    arm_max_f32( ufFourierFrequency, FFT_SIZE/2, &ufMaxFFTMag, &usMaxFFTIdx );
-
-    /** @TODO: Make pattern based on frequency data.
-      * @NOTE: ufFourierFrquency[0] is the dc offset.  To get the true dc offset
-      *     you have to divide this number by FFT_SIZE or ADC_SAMPLES.
-      * @NOTE: The rest of the values are scaled by FFT_SIZE/2 or ADC_SAMPLES/4.
-      *     So to get the true magnitude of the frequencies you have to divide
-      *     by FFT_SIZE/2 or ADC_SAMPLES/4.
-      *
-      * The frequency that corresponds to each index can be determined by:
-      *     Frequency = Idx * SamplingFrequency / FFT_SIZE
-      *
-      * For this project it equates to ~345Hz per index.
-      *     344.5 Hz = 44100 Hz / 128
-      */
+    arm_max_f32( ufFourierFrequency, RFFT_SIZE, &ufMaxFFTMag, &usMaxFFTIdx );
 
     /* Shift all of the LEDs one further down the strip. */
     for ( uint16_t i = NUMBER_OF_LEDS-1; i > 0; i-- )
@@ -215,6 +161,7 @@ void vAudioTrain ( const uint32_t ulPatternCount )
                 (int16_t)ucGetLed( i-1, BLU ) );
     }
 
+    uint16_t usSectionCount = 0;
     uint16_t usSectionFreq[configAUDIO_TRAIN_NUM_FREQUENCIES] = { 0U };
     uint16_t usMaxSectionFreq[configAUDIO_TRAIN_NUM_FREQUENCIES] = {
         configAUDIO_TRAIN_FEQUENCIES
@@ -224,10 +171,10 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     for ( uint16_t i = 0; i < configAUDIO_TRAIN_NUM_FREQUENCIES; i++ )
     {
         /* Scroll through each frequency band and see if it fits into any of them. */
-        for ( uint16_t j = 1; j < FFT_SIZE / 2; j++ )
+        for ( uint16_t j = 1; j < RFFT_SIZE; j++ )
         {
             /* Get the frequency associated to the index. */
-            uint32_t ulIdxFreq = ( (uint32_t)j * SAMPLING_FREQUENCY ) / FFT_SIZE;
+            uint32_t ulIdxFreq = ( (uint32_t)j * SAMPLING_FREQUENCY ) / RFFT_SIZE;
 
             /* Find max frequency within the allocated range for the section. */
             if ( ulIdxFreq <= usMaxSectionFreq[i] )
@@ -236,15 +183,17 @@ void vAudioTrain ( const uint32_t ulPatternCount )
                 if ( ( i == 0 ) ||
                      ( ulIdxFreq > usMaxSectionFreq[i-1] ) )
                 {
-                    /* Chekc if the frequency is in the band. If so, track the max for this band. */
-                    if ( ufFourierFrequency[j] > usSectionFreq[i] )
+                    /* Check if the frequency is in the band. If so, track the max for this band. */
+                    //if ( ufFourierFrequency[j] > usSectionFreq[i] )
                     {
-                        usSectionFreq[i] = (uint16_t)ufFourierFrequency[j];
+                        usSectionFreq[i] += (uint16_t)ufFourierFrequency[j];
                     }
+                    usSectionCount++;
                 }
             }
             else
             {
+                usSectionFreq[i] /= usSectionCount;
                 break;
             }
         }
@@ -255,13 +204,17 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     //int16_t G = (int16_t)( ( usSectionFreq[1] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
     //int16_t B = (int16_t)( ( usSectionFreq[2] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
 
-    if ( ufFourierFrequency[2] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[2] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
-    if ( ufFourierFrequency[15] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[15] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
-    if ( ufFourierFrequency[35] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[35] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
+    //if ( ufFourierFrequency[2] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[2] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
+    //if ( ufFourierFrequency[15] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[15] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
+    //if ( ufFourierFrequency[35] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[35] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
 
-    int16_t R = (int16_t)( ( ufFourierFrequency[2] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    int16_t G = (int16_t)( ( ufFourierFrequency[15] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    int16_t B = (int16_t)( ( ufFourierFrequency[35] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    //int16_t R = (int16_t)( 255 * ufFourierFrequency[2] / ufMaxFFTMag );
+    //int16_t G = (int16_t)( 255 * ufFourierFrequency[15] / ufMaxFFTMag );
+    //int16_t B = (int16_t)( 255 * ufFourierFrequency[35] / ufMaxFFTMag );
+
+    int16_t R = (int16_t)( 255 * usSectionFreq[0] / 300 );
+    int16_t G = (int16_t)( 255 * usSectionFreq[1] / 300 );
+    int16_t B = (int16_t)( 255 * usSectionFreq[2] / 300 );
 
     vSetLed( 0, R, G, B );
 }
@@ -279,7 +232,7 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     float32_t ufComplexFFT[ADC_SAMPLES] = { 0.0F };
 
     /* The real FFT does not provide symmetry so divide FFT_SIZE by 2. */
-    float32_t ufFourierFrequency[FFT_SIZE/2] = { 0.0F };
+    float32_t ufFourierFrequency[RFFT_SIZE] = { 0.0F };
 
     /* Scaling vector.
      * This can be uncommented to normalize back to amplitude. */
@@ -319,7 +272,7 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     float32_t temp = ufComplexFFT[0];
 
     /* Output of FFT is always complex, so convert to magnitude. */
-    arm_cmplx_mag_f32( ufComplexFFT, ufFourierFrequency, FFT_SIZE );
+    arm_cmplx_mag_f32( ufComplexFFT, ufFourierFrequency, RFFT_SIZE );
 
     /* Complex magnitude is not applicable to the DC offset. */
     ufFourierFrequency[0] = temp;
@@ -332,7 +285,7 @@ void vRgbAudio ( const uint32_t ulPatternCount )
     /* Get the max FFT magnitude and its index. */
     ufDCOffset = ufFourierFrequency[0];
     ufFourierFrequency[0] = 0.0F;
-    arm_max_f32( ufFourierFrequency, FFT_SIZE/2, &ufMaxFFTMag, &usMaxFFTIdx );
+    arm_max_f32( ufFourierFrequency, RFFT_SIZE, &ufMaxFFTMag, &usMaxFFTIdx );
 
     /** @TODO: Make pattern based on frequency data.
       * @NOTE: ufFourierFrquency[0] is the dc offset.  To get the true dc offset
@@ -364,9 +317,9 @@ void vRgbAudio ( const uint32_t ulPatternCount )
         uint16_t usNumSectionFrequencies = 0U;
 
         /* Find average frequency within the allocated range for the section. */
-        for ( uint16_t j = 1; j < FFT_SIZE/2; j++ )
+        for ( uint16_t j = 1; j < RFFT_SIZE; j++ )
         {
-            uint32_t ulIdxFreq = ( (uint32_t)j * SAMPLING_FREQUENCY ) / FFT_SIZE;
+            uint32_t ulIdxFreq = ( (uint32_t)j * SAMPLING_FREQUENCY ) / CFFT_SIZE;
             if ( ulIdxFreq <= usMaxSectionFreq[i] )
             {
                 /* Order of evaluations is important here. */

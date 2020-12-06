@@ -37,7 +37,7 @@
 #define configAURORA_BOREALIS_TIME_MS                               ( 60000 )
 #define configLASER_TIME_MS                                         ( 30000 )
 #define configFIRE_SPARKS_TIME_MS                                   ( 60000 )
-#define configRGB_AUDIO_TIME_MS                                     ( 10000 )
+#define configRGB_AUDIO_TIME_MS                                     ( 1000 )
 #define configAUDIO_TRAIN_TIME_MS                                   ( 30000 )
 
 /*-----------------------------------------------------------*/
@@ -98,8 +98,8 @@
 
 /* Audio train defines. */
 #define configAUDIO_TRAIN_NUM_FREQUENCIES                           ( 3 )
-#define configAUDIO_TRAIN_FEQUENCIES                                120U, 500U, 2000U
-#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 10000000 )
+#define configAUDIO_TRAIN_FEQUENCIES                                200U, 900U, 3000U
+#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 30000 )
 #define configAUDIO_TRAIN_BRIGHTNESS_OFFSET                         ( 0 )
 
 /*-----------------------------------------------------------*/
