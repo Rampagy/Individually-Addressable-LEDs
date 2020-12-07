@@ -244,6 +244,7 @@ void vRgbAudio ( const uint32_t ulPatternCount )
 
     /* Create Sections. */
     uint16_t usSectionStartIdx[configRGB_AUDIO_SECTIONS] = { 1, 6, 15, 22 };
+    uint16_t usSectionOffset[configRGB_AUDIO_SECTIONS] = { 2, 3, 8, 6};
 
     for ( uint16_t i = 0; i < configRGB_AUDIO_SECTIONS; i++ )
     {
@@ -263,7 +264,7 @@ void vRgbAudio ( const uint32_t ulPatternCount )
         }
 
         /* Calculate brightness. */
-        uint16_t usLEDBrightness = (uint16_t)( (float32_t)255 * (fMaxVal - 3) / configRGB_AUDIO_MAX_BRIGHTNESS );
+        uint16_t usLEDBrightness = (uint16_t)( (float32_t)255 * (fMaxVal - usSectionOffset[i]) / configRGB_AUDIO_MAX_BRIGHTNESS );
 
         /* Set section color. */
         for ( uint16_t j = i*configRGB_AUDIO_SECTION_LENGTH; j < (i + 1) * configRGB_AUDIO_SECTION_LENGTH; j++ )

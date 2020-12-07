@@ -91,7 +91,7 @@
 /* RGB audio defines. */
 #define configRGB_AUDIO_SECTIONS                                    ( 4 )
 #define configRGB_AUDIO_SECTION_LENGTH                              ( NUMBER_OF_LEDS / configRGB_AUDIO_SECTIONS )
-#define configRGB_AUDIO_MAX_BRIGHTNESS                              ( 15 )
+#define configRGB_AUDIO_MAX_BRIGHTNESS                              ( 150 )
 #define configRGB_AUDIO_FREQUENCY_LENGTH                            ( 5 )
 
 /*-----------------------------------------------------------*/
