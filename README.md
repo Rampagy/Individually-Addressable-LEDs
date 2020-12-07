@@ -1,12 +1,14 @@
 # Individually Addressable LEDs
 
-Example code using FreeRTOS to control individually addressable LEDs (SK6812).  This project also experiments with the DSP onboard the STM32F4-Discovery via audio syncing.
+Example code using the onboard DSP, FreeRTOS, and DMA to control individually addressable LEDs (SK6812).  This project has both non-audio patterns and audio syncing patterns.
 
-https://youtu.be/5Bn3eNN9Ki0
+Non-audio syncing patterns: https://youtu.be/5Bn3eNN9Ki0
+Audio syncing patterns: Coming soon to a YouTube near you
+Setup: Coming soon to a YouTube near you
 
 ## Architecture
 
-The idea is to use 2 different tasks to manage the LEDS. The tasks are listed below by priority (higher numbers will preempt lower numbers).
+The idea is to use 2 different tasks to manage the LEDs. The tasks are listed below by priority (higher numbers will preempt lower numbers).  I realize they could probably all be combined into one task, but more tasks means more learning.
 
 0.  Idle Task
     -  Does nothing
@@ -26,6 +28,7 @@ The idea is to use 2 different tasks to manage the LEDS. The tasks are listed be
 ```
 Timer 2: 44.1 kHz timer for sampling audio voltage data 
 Timer 4: LED Data Line
+Timer 12: Collects runtime statistics (task time, computation times, ...)
 ```
 
 #### GPIO:
@@ -40,14 +43,16 @@ D15: LED6 (BLU)
 ```
 
 #### DMA:
+
 ```
 DMA1 Stream 0: Transfer duty cycles to PWM module.
-DMA2 Stream 0: Transfer ADC1->DR to buffer.
+DMA2 Stream 0: Transfer ADC1->DR to buffers (used in double buffer mode).
 ```
 
 #### ADC's:
+
 ```
-ADC1 Channel 14: Samples audio voltage data
+ADC1 Channel 14: Samples audio voltage
 ```
 
 
