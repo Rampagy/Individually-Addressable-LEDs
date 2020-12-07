@@ -12,7 +12,7 @@
         <ByteLimit>50</ByteLimit>
     </Stack>
     <DebugChecksum>
-        <Checksum>136877748</Checksum>
+        <Checksum>4012015304</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -96,6 +96,9 @@
         <ShowSource>0</ShowSource>
         <HideCovered>0</HideCovered>
     </CodeCoverage>
+    <Registers>
+        <regBase0>TIM2_ARR 10</regBase0>
+    </Registers>
     <array_types>
         <Fmt0>uint8_t[3]	3	0</Fmt0>
     </array_types>

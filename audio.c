@@ -2,8 +2,8 @@
 
 /* Initialize variables for fast fourier transform. */
 arm_rfft_fast_instance_f32 S;
-float32_t ufAdcSampleBuffer[ADC_SAMPLES] = { 0.0F };
-uint16_t __usAdcIntermediateSampleBuffer[ADC_SAMPLES] = { 0U };
+uint16_t __usAdcIntermediateSampleBuffer0[ADC_SAMPLES] = { 0U };
+uint16_t __usAdcIntermediateSampleBuffer1[ADC_SAMPLES] = { 0U };
 
 
 /**
@@ -25,8 +25,6 @@ void DMA2_Stream0_IRQHandler( void )
     {
         /* Clear DMA Stream Half Transfer interrupt pending bit */
         DMA_ClearITPendingBit( DMA2_Stream0, DMA_IT_HTIF0 );
-
-        // Add code here to process first half of buffer (ping)
     }
 
     /* DMA Stream Transfer Complete interrupt */
@@ -34,12 +32,6 @@ void DMA2_Stream0_IRQHandler( void )
     {
         /* Clear DMA Stream Transfer Complete interrupt pending bit */
         DMA_ClearITPendingBit( DMA2_Stream0, DMA_IT_TCIF0 );
-
-        /* Copy data from the intermediate buffer to the final buffer. */
-        for ( uint16_t i = 0; i < ADC_SAMPLES; i++ )
-        {
-            ufAdcSampleBuffer[i] = (float32_t)__usAdcIntermediateSampleBuffer[i];
-        }
     }
 
     /* Update the high water mark for task length. */
@@ -99,21 +91,39 @@ void vPerformFFT( float32_t* ufFourierFrequency )
      * Enter critical here to ensure that the AdcSampleBuffer is not
      * updated in the middle of the FFT.*/
     taskENTER_CRITICAL();
-    arm_rfft_fast_f32( &S, ufAdcSampleBuffer, ufComplexFFT, 0 );
-    taskEXIT_CRITICAL();
 
-    /* Save DC offset into temporary variable because arm_cmplx_mag_f32 clears it out. */
-    //float32_t temp = ufComplexFFT[0];
+    float32_t ufAdcBuffer[ADC_SAMPLES] = { 0.0F };
+
+    switch( DMA_GetCurrentMemoryTarget( DMA2_Stream0 ) )
+    {
+    case 0:
+        for ( uint16_t i = 0; i < ADC_SAMPLES; i++ )
+        {
+            ufAdcBuffer[i] = (float32_t)__usAdcIntermediateSampleBuffer1[i];
+        }
+
+        arm_rfft_fast_f32( &S, ufAdcBuffer, ufComplexFFT, 0 );
+        break;
+
+    case 1:
+    default:
+        for ( uint16_t i = 0; i < ADC_SAMPLES; i++ )
+        {
+            ufAdcBuffer[i] = (float32_t)__usAdcIntermediateSampleBuffer0[i];
+        }
+
+        arm_rfft_fast_f32( &S, ufAdcBuffer, ufComplexFFT, 0 );
+        break;
+    }
+
+    taskEXIT_CRITICAL();
 
     /* Output of FFT is always complex, so convert to magnitude. */
     arm_cmplx_mag_f32( ufComplexFFT, ufFourierFrequency, RFFT_SIZE );
 
-    /* Complex magnitude is not applicable to the DC offset. */
-    //ufFourierFrequency[0] = temp;
-
     /* Rescale ufFourierFrequency to its true amplitudes.
      * I have no idea where these scalings come from, but it works. */
-    float32_t scale = 1.0F / RFFT_SIZE;
+    float32_t scale = 1.0F / CFFT_SIZE;
     arm_scale_f32( ufFourierFrequency, scale, ufFourierFrequency, RFFT_SIZE );
 }
 /*-----------------------------------------------------------*/
@@ -188,9 +198,12 @@ void vInitAudio( void )
     /* DMA1 channel 0 configuration. */
     DMA_DeInit( DMA2_Stream0 );
 
+    DMA_DoubleBufferModeConfig( DMA2_Stream0, (uint32_t)&__usAdcIntermediateSampleBuffer1[0], (uint32_t)&__usAdcIntermediateSampleBuffer0[0] );
+    DMA_DoubleBufferModeCmd( DMA2_Stream0, ENABLE );
+
     DMA_InitStructure.DMA_Channel = DMA_Channel_0;
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&ADC1->DR;                             // physical address of register to load into memory
-    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&__usAdcIntermediateSampleBuffer[0];      // physical address of memeory to be loaded
+    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&__usAdcIntermediateSampleBuffer0[0];      // physical address of memeory to be loaded
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;                                     // shift data from peripheral to memeory
     DMA_InitStructure.DMA_BufferSize = ADC_SAMPLES;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
