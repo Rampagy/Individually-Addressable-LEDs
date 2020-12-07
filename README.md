@@ -3,7 +3,9 @@
 Example code using the onboard DSP, FreeRTOS, and DMA to control individually addressable LEDs (SK6812).  This project has both non-audio patterns and audio syncing patterns.
 
 Non-audio syncing patterns: https://youtu.be/5Bn3eNN9Ki0
+
 Audio syncing patterns: Coming soon to a YouTube near you
+
 Setup: Coming soon to a YouTube near you
 
 ## Architecture
