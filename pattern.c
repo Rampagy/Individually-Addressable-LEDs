@@ -90,8 +90,7 @@ void vCreatePattern( void * pvParameters  )
 
         case RGB_AUDIO:
             /* Create RGB audio pattern. */
-            /** @TODO: This function call is overruinning the task rate by 1000%. Need to fix. */
-            //vRgbAudio ( ulPatternCount );
+            vRgbAudio ( ulPatternCount );
 
             /* Check for next pattern. */
             vCheckNextPattern( &ulPatternCount, configRGB_AUDIO_TIME_MS, &eCurrentPattern );
@@ -161,62 +160,71 @@ void vAudioTrain ( const uint32_t ulPatternCount )
                 (int16_t)ucGetLed( i-1, BLU ) );
     }
 
-    uint16_t usSectionCount = 0;
-    uint16_t usSectionFreq[configAUDIO_TRAIN_NUM_FREQUENCIES] = { 0U };
-    uint16_t usMaxSectionFreq[configAUDIO_TRAIN_NUM_FREQUENCIES] = {
-        configAUDIO_TRAIN_FEQUENCIES
-    };
+    q31_t colors[3] = { 0U };
 
-    /* Determine the LED brightnesses. */
-    for ( uint16_t i = 0; i < configAUDIO_TRAIN_NUM_FREQUENCIES; i++ )
-    {
-        /* Scroll through each frequency band and see if it fits into any of them. */
-        for ( uint16_t j = 1; j < RFFT_SIZE; j++ )
-        {
-            /* Get the frequency associated to the index. */
-            uint32_t ulIdxFreq = ( (uint32_t)j * SAMPLING_FREQUENCY ) / RFFT_SIZE;
+    colors[0] = (q31_t)( ( 32 * ufFourierFrequency[1] +
+                           32 * ufFourierFrequency[2] +
+                           64 * ufFourierFrequency[3] +
+                           64 * ufFourierFrequency[4] +
+                           16 * ufFourierFrequency[5] +
+                            8 * ufFourierFrequency[6] +
+                            8 * ufFourierFrequency[7] +
+                            8 * ufFourierFrequency[8] +
+                            4 * ufFourierFrequency[9] +
+                            4 * ufFourierFrequency[10] +
+                            4 * ufFourierFrequency[11] +
+                            4 * ufFourierFrequency[12] +
+                            4 * ufFourierFrequency[13] +
+                            2 * ufFourierFrequency[14] +
+                            1 * ufFourierFrequency[15] +
+                            1 * ufFourierFrequency[16] +
+                            1 * ufFourierFrequency[17] ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
 
-            /* Find max frequency within the allocated range for the section. */
-            if ( ulIdxFreq <= usMaxSectionFreq[i] )
-            {
-                /* Order of evaluations is important here. */
-                if ( ( i == 0 ) ||
-                     ( ulIdxFreq > usMaxSectionFreq[i-1] ) )
-                {
-                    /* Check if the frequency is in the band. If so, track the max for this band. */
-                    //if ( ufFourierFrequency[j] > usSectionFreq[i] )
-                    {
-                        usSectionFreq[i] += (uint16_t)ufFourierFrequency[j];
-                    }
-                    usSectionCount++;
-                }
-            }
-            else
-            {
-                usSectionFreq[i] /= usSectionCount;
-                break;
-            }
-        }
-    }
+    colors[1] = (q31_t)( ( 1 * ufFourierFrequency[13] +
+                           2 * ufFourierFrequency[14] +
+                           4 * ufFourierFrequency[15] +
+                           8 * ufFourierFrequency[16] +
+                          16 * ufFourierFrequency[17] +
+                          32 * ufFourierFrequency[18] +
+                         128 * ufFourierFrequency[19] +
+                          32 * ufFourierFrequency[20] +
+                          16 * ufFourierFrequency[21] +
+                           8 * ufFourierFrequency[22] +
+                           4 * ufFourierFrequency[23] +
+                           2 * ufFourierFrequency[24] +
+                           1 * ufFourierFrequency[25] ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
 
-    /* Set the first LED to its new color. */
-    //int16_t R = (int16_t)( ( usSectionFreq[0] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    //int16_t G = (int16_t)( ( usSectionFreq[1] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    //int16_t B = (int16_t)( ( usSectionFreq[2] * 255 ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    colors[2] = (q31_t)( ( 4 * ufFourierFrequency[29] +
+                           4 * ufFourierFrequency[30] +
+                           4 * ufFourierFrequency[31] +
+                           4 * ufFourierFrequency[32] +
+                           8 * ufFourierFrequency[33] +
+                           8 * ufFourierFrequency[34] +
+                           8 * ufFourierFrequency[35] +
+                           8 * ufFourierFrequency[36] +
+                          16 * ufFourierFrequency[37] +
+                          16 * ufFourierFrequency[38] +
+                          32 * ufFourierFrequency[39] +
+                          32 * ufFourierFrequency[40] +
+                          32 * ufFourierFrequency[41] +
+                          16 * ufFourierFrequency[42] +
+                          16 * ufFourierFrequency[43] +
+                           8 * ufFourierFrequency[44] +
+                           8 * ufFourierFrequency[45] +
+                           8 * ufFourierFrequency[46] +
+                           8 * ufFourierFrequency[47] +
+                           4 * ufFourierFrequency[48] +
+                           4 * ufFourierFrequency[49] +
+                           4 * ufFourierFrequency[50] +
+                           4 * ufFourierFrequency[51] ) / configAUDIO_TRAIN_MAX_BRIGHTNESS );
 
-    //if ( ufFourierFrequency[2] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[2] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
-    //if ( ufFourierFrequency[15] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[15] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
-    //if ( ufFourierFrequency[35] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[35] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
+    uint32_t ulMinIdx = 0;
+    q31_t lMinVal = 0;
 
-    int16_t R = (int16_t)( 255 * ufFourierFrequency[2] / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    int16_t G = (int16_t)( 255 * ufFourierFrequency[15] / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    int16_t B = (int16_t)( 255 * ufFourierFrequency[35] / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    arm_min_q31( colors, 3, &lMinVal, &ulMinIdx );
+    colors[ulMinIdx] = 0;
 
-    //int16_t R = (int16_t)( 255 * usSectionFreq[0] / 300 );
-    //int16_t G = (int16_t)( 255 * usSectionFreq[1] / 300 );
-    //int16_t B = (int16_t)( 255 * usSectionFreq[2] / 300 );
-
-    vSetLed( 0, R, G, B );
+    vSetLed( 0, colors[0], colors[1], colors[2] );
 }
 /*-----------------------------------------------------------*/
 
@@ -228,156 +236,133 @@ void vAudioTrain ( const uint32_t ulPatternCount )
   */
 void vRgbAudio ( const uint32_t ulPatternCount )
 {
-    /* Create array for storing frequency information. */
-    float32_t ufComplexFFT[ADC_SAMPLES] = { 0.0F };
-
     /* The real FFT does not provide symmetry so divide FFT_SIZE by 2. */
     float32_t ufFourierFrequency[RFFT_SIZE] = { 0.0F };
 
-    /* Scaling vector.
-     * This can be uncommented to normalize back to amplitude. */
-    //float32_t ufScalingVector[FFT_SIZE/2] = { 0.0F };
+    /* Do the FFT. */
+    vPerformFFT( ufFourierFrequency );
 
-    /* FFT max variables */
-    float32_t ufMaxFFTMag = 0.0F;
-    float32_t ufDCOffset = 0.0F;
-    uint32_t usMaxFFTIdx = 0U;
+    /* Create Sections. */
+    uint16_t usSectionStartIdx[configRGB_AUDIO_SECTIONS] = { 1, 6, 15, 22 };
 
-    /* DC offset has a different scaling than the non-zero frequencies.
-     * This can be uncommented to normalize back to amplitude. */
-    //ufScalingVector[0] = 1.0 / FFT_SIZE;
-    //for (uint16_t i = 1; i < (FFT_SIZE/2); i++)
-    //{
-    //    /* I do not know where these scalings come from, just that they work. */
-    //    ufScalingVector[i] = 1.0 / (FFT_SIZE/2.0);
-    //}
-
-    /* This can be uncommented to test the fft logic. */
-    //for (uint16_t i = 0; i < ADC_SAMPLES; i++)
-    //{
-    //    /* Frequency magnitude at index 10 (4410 Hz) should be the max at 10
-    //     * with a DC offset of 50.
-    //     */
-    //    ufAdcSampleBuffer[i] = 10*arm_sin_f32( 2.0*3.14159F*i/8.0 ) + 50;
-    //}
-
-    /* Perform real FFT (nobody understands complex numbers anyways).
-     * Enter critical here to ensure that the AdcSampleBuffer is not
-     * updated in the middle of the FFT.*/
-    taskENTER_CRITICAL();
-    arm_rfft_fast_f32( &S, ufAdcSampleBuffer, ufComplexFFT, 0 );
-    taskEXIT_CRITICAL();
-
-    /* Save DC offset into temporary variable because arm_cmplx_mag_f32 clears it out. */
-    float32_t temp = ufComplexFFT[0];
-
-    /* Output of FFT is always complex, so convert to magnitude. */
-    arm_cmplx_mag_f32( ufComplexFFT, ufFourierFrequency, RFFT_SIZE );
-
-    /* Complex magnitude is not applicable to the DC offset. */
-    ufFourierFrequency[0] = temp;
-
-    /* Rescale ufFourierFrequency to its true amplitudes.
-     * I have no idea where these scalings come from, but it works.
-     * This can be uncommented to normalize back to amplitude. */
-    //arm_mult_f32( ufFourierFrequency, ufScalingVector, ufFourierFrequency, FFT_SIZE/2 );
-
-    /* Get the max FFT magnitude and its index. */
-    ufDCOffset = ufFourierFrequency[0];
-    ufFourierFrequency[0] = 0.0F;
-    arm_max_f32( ufFourierFrequency, RFFT_SIZE, &ufMaxFFTMag, &usMaxFFTIdx );
-
-    /** @TODO: Make pattern based on frequency data.
-      * @NOTE: ufFourierFrquency[0] is the dc offset.  To get the true dc offset
-      *     you have to divide this number by FFT_SIZE or ADC_SAMPLES.
-      * @NOTE: The rest of the values are scaled by FFT_SIZE/2 or ADC_SAMPLES/4.
-      *     So to get the true magnitude of the frequencies you have to divide
-      *     by FFT_SIZE/2 or ADC_SAMPLES/4.
-      *
-      * The frequency that corresponds to each index can be determined by:
-      *     Frequency = Idx * SamplingFrequency / FFT_SIZE
-      *
-      * For this project it equates to ~345Hz per index.
-      *     344.5 Hz = 44100 Hz / 128
-      */
-
-    /* General Peak -> 10627
-     * DC offset peak -> 2048047
-     */
-
-    float32_t ufSectionAverages[configRGB_AUDIO_SECTIONS] = { 0 };
-    uint16_t usMaxSectionFreq[configRGB_AUDIO_SECTIONS] = {
-        configRGB_AUDIO_SECTION_COLORS
-    };
-
-    /* Find the average magnitude for each frequency section. */
     for ( uint16_t i = 0; i < configRGB_AUDIO_SECTIONS; i++ )
     {
-        float32_t ufAveFFTSectionMag = 0.0F;
-        uint16_t usNumSectionFrequencies = 0U;
+        float_t fMaxVal = 0;
+        uint16_t usMaxIdx = 0;
 
-        /* Find average frequency within the allocated range for the section. */
-        for ( uint16_t j = 1; j < RFFT_SIZE; j++ )
+        for ( uint16_t j = 0; j < configRGB_AUDIO_FREQUENCY_LENGTH; j++ )
         {
-            uint32_t ulIdxFreq = ( (uint32_t)j * SAMPLING_FREQUENCY ) / CFFT_SIZE;
-            if ( ulIdxFreq <= usMaxSectionFreq[i] )
+            uint16_t usColorIdx = j + usSectionStartIdx[i];
+
+            /* Track the max value within this section. */
+            if ( ufFourierFrequency[usColorIdx] > fMaxVal )
             {
-                /* Order of evaluations is important here. */
-                if ( ( i == 0 ) ||
-                     ( ulIdxFreq > usMaxSectionFreq[i-1] ) )
-                {
-                    ufAveFFTSectionMag += (uint16_t)ufFourierFrequency[j];
-                    usNumSectionFrequencies++;
-                }
-            }
-            else
-            {
-                /* If we are above the section limit then there's no
-                 * point in continuing the search, because it can only get bigger. */
-                break;
+                usMaxIdx = usColorIdx;
+                fMaxVal = ufFourierFrequency[usColorIdx];
             }
         }
 
-        /* Calculate the average for the section. */
-        ufSectionAverages[i] = ufAveFFTSectionMag / (float32_t)usNumSectionFrequencies;
+        /* Calculate brightness. */
+        uint16_t usLEDBrightness = (uint16_t)( (float32_t)255 * (fMaxVal - 3) / configRGB_AUDIO_MAX_BRIGHTNESS );
 
-        /* Saturate the averages. */
-        if ( ufSectionAverages[i] > configRGB_AUDIO_MAX_BRIGHTNESS )
+        /* Set section color. */
+        for ( uint16_t j = i*configRGB_AUDIO_SECTION_LENGTH; j < (i + 1) * configRGB_AUDIO_SECTION_LENGTH; j++ )
         {
-            ufSectionAverages[i] = configRGB_AUDIO_MAX_BRIGHTNESS;
-        }
-
-        /* Now calculate and print the color for each section. */
-        for (uint16_t j = 0; j < configRGB_AUDIO_LEDS_PER_SECTION; j++)
-        {
-            /* Check the stack size. */
-            xPatternAvailableStack = uxTaskGetStackHighWaterMark( xCreatePatternHandle );
-
-            /* Determine the LED to set. */
-            uint16_t usLedIdx = i * configRGB_AUDIO_LEDS_PER_SECTION + j;
-
-            /* Determine the brightness of the LED. */
-            uint16_t usLEDBrightness = ( uint16_t )( ufSectionAverages[i] * 255 / configRGB_AUDIO_MAX_BRIGHTNESS );
-
             /* Set the LED color. */
             switch ( i % COLOR_CHANNELS )
             {
             default:
             case 0:
                 /* Make this section RED. */
-                vSetLed( usLedIdx, usLEDBrightness, 0, 0 );
+                vSetLed( j, usLEDBrightness, 0, 0 );
                 break;
             case 1:
                 /* Make this section GREEN. */
-                vSetLed( usLedIdx, 0, usLEDBrightness, 0 );
+                vSetLed( j, 0, usLEDBrightness, 0 );
                 break;
             case 2:
                 /* Make this section BLUE. */
-                vSetLed( usLedIdx, 0, 0, usLEDBrightness );
+                vSetLed( j, 0, 0, usLEDBrightness );
                 break;
             }
         }
     }
+
+
+
+    //float32_t ufSectionAverages[configRGB_AUDIO_SECTIONS] = { 0 };
+    //uint16_t usMaxSectionFreq[configRGB_AUDIO_SECTIONS] = {
+    //    configRGB_AUDIO_SECTION_COLORS
+    //};
+    //
+    ///* Find the average magnitude for each frequency section. */
+    //for ( uint16_t i = 0; i < configRGB_AUDIO_SECTIONS; i++ )
+    //{
+    //    float32_t ufAveFFTSectionMag = 0.0F;
+    //    uint16_t usNumSectionFrequencies = 0U;
+    //
+    //    /* Find average frequency within the allocated range for the section. */
+    //    for ( uint16_t j = 1; j < RFFT_SIZE; j++ )
+    //    {
+    //        uint32_t ulIdxFreq = ( (uint32_t)j * SAMPLING_FREQUENCY ) / CFFT_SIZE;
+    //        if ( ulIdxFreq <= usMaxSectionFreq[i] )
+    //        {
+    //            /* Order of evaluations is important here. */
+    //            if ( ( i == 0 ) ||
+    //                 ( ulIdxFreq > usMaxSectionFreq[i-1] ) )
+    //            {
+    //                ufAveFFTSectionMag += (uint16_t)ufFourierFrequency[j];
+    //                usNumSectionFrequencies++;
+    //            }
+    //        }
+    //        else
+    //        {
+    //            /* If we are above the section limit then there's no
+    //             * point in continuing the search, because it can only get bigger. */
+    //            break;
+    //        }
+    //    }
+    //
+    //    /* Calculate the average for the section. */
+    //    ufSectionAverages[i] = ufAveFFTSectionMag / (float32_t)usNumSectionFrequencies;
+    //
+    //    /* Saturate the averages. */
+    //    if ( ufSectionAverages[i] > configRGB_AUDIO_MAX_BRIGHTNESS )
+    //    {
+    //        ufSectionAverages[i] = configRGB_AUDIO_MAX_BRIGHTNESS;
+    //    }
+    //
+    //    /* Now calculate and print the color for each section. */
+    //    for (uint16_t j = 0; j < configRGB_AUDIO_LEDS_PER_SECTION; j++)
+    //    {
+    //        /* Check the stack size. */
+    //        xPatternAvailableStack = uxTaskGetStackHighWaterMark( xCreatePatternHandle );
+    //
+    //        /* Determine the LED to set. */
+    //        uint16_t usLedIdx = i * configRGB_AUDIO_LEDS_PER_SECTION + j;
+    //
+    //        /* Determine the brightness of the LED. */
+    //        uint16_t usLEDBrightness = ( uint16_t )( ufSectionAverages[i] * 255 / configRGB_AUDIO_MAX_BRIGHTNESS );
+    //
+    //        /* Set the LED color. */
+    //        switch ( i % COLOR_CHANNELS )
+    //        {
+    //        default:
+    //        case 0:
+    //            /* Make this section RED. */
+    //            vSetLed( usLedIdx, usLEDBrightness, 0, 0 );
+    //            break;
+    //        case 1:
+    //            /* Make this section GREEN. */
+    //            vSetLed( usLedIdx, 0, usLEDBrightness, 0 );
+    //            break;
+    //        case 2:
+    //            /* Make this section BLUE. */
+    //            vSetLed( usLedIdx, 0, 0, usLEDBrightness );
+    //            break;
+    //        }
+    //    }
+    //}
 }
 /*-----------------------------------------------------------*/
 
