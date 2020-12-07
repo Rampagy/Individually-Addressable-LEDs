@@ -208,13 +208,13 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     //if ( ufFourierFrequency[15] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[15] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
     //if ( ufFourierFrequency[35] > configAUDIO_TRAIN_MAX_BRIGHTNESS ) ufFourierFrequency[35] = configAUDIO_TRAIN_MAX_BRIGHTNESS;
 
-    //int16_t R = (int16_t)( 255 * ufFourierFrequency[2] / ufMaxFFTMag );
-    //int16_t G = (int16_t)( 255 * ufFourierFrequency[15] / ufMaxFFTMag );
-    //int16_t B = (int16_t)( 255 * ufFourierFrequency[35] / ufMaxFFTMag );
+    int16_t R = (int16_t)( 255 * ufFourierFrequency[2] / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    int16_t G = (int16_t)( 255 * ufFourierFrequency[15] / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    int16_t B = (int16_t)( 255 * ufFourierFrequency[35] / configAUDIO_TRAIN_MAX_BRIGHTNESS );
 
-    int16_t R = (int16_t)( 255 * usSectionFreq[0] / 300 );
-    int16_t G = (int16_t)( 255 * usSectionFreq[1] / 300 );
-    int16_t B = (int16_t)( 255 * usSectionFreq[2] / 300 );
+    //int16_t R = (int16_t)( 255 * usSectionFreq[0] / 300 );
+    //int16_t G = (int16_t)( 255 * usSectionFreq[1] / 300 );
+    //int16_t B = (int16_t)( 255 * usSectionFreq[2] / 300 );
 
     vSetLed( 0, R, G, B );
 }

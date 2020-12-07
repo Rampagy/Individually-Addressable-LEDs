@@ -99,7 +99,7 @@
 /* Audio train defines. */
 #define configAUDIO_TRAIN_NUM_FREQUENCIES                           ( 3 )
 #define configAUDIO_TRAIN_FEQUENCIES                                200U, 900U, 3000U
-#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 30000 )
+#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 45 )
 #define configAUDIO_TRAIN_BRIGHTNESS_OFFSET                         ( 0 )
 
 /*-----------------------------------------------------------*/
