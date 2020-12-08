@@ -37,8 +37,8 @@
 #define configAURORA_BOREALIS_TIME_MS                               ( 60000 )
 #define configLASER_TIME_MS                                         ( 30000 )
 #define configFIRE_SPARKS_TIME_MS                                   ( 60000 )
-#define configRGB_AUDIO_TIME_MS                                     ( 30000 )
-#define configAUDIO_TRAIN_TIME_MS                                   ( 5000 )
+#define configRGB_AUDIO_TIME_MS                                     ( 20000 )
+#define configAUDIO_TRAIN_TIME_MS                                   ( 20000 )
 
 /*-----------------------------------------------------------*/
 
@@ -91,14 +91,13 @@
 /* RGB audio defines. */
 #define configRGB_AUDIO_SECTIONS                                    ( 4 )
 #define configRGB_AUDIO_SECTION_LENGTH                              ( NUMBER_OF_LEDS / configRGB_AUDIO_SECTIONS )
-#define configRGB_AUDIO_MAX_BRIGHTNESS                              ( 150 )
+#define configRGB_AUDIO_MAX_BRIGHTNESS                              ( 140 )
 #define configRGB_AUDIO_FREQUENCY_LENGTH                            ( 5 )
 
 /*-----------------------------------------------------------*/
 
 /* Audio train defines. */
-#define configAUDIO_TRAIN_NUM_FREQUENCIES                           ( 3 )
-#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 15 )
+#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 140 )
 
 /*-----------------------------------------------------------*/
 
@@ -136,6 +135,8 @@ void vFillStrip( uint8_t R, uint8_t G, uint8_t B );
 
 /* Set a single led. */
 void vSetLed( int16_t LED, int16_t R, int16_t G, int16_t B );
+
+int32_t lLinearLookup( int32_t val, int32_t y2, int32_t y1, int32_t x2, int32_t x1 );
 
 /* Get led color channel. */
 uint8_t ucGetLed( int16_t LED, uint8_t color );

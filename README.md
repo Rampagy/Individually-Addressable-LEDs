@@ -51,7 +51,7 @@ DMA1 Stream 0: Transfer duty cycles to PWM module.
 DMA2 Stream 0: Transfer ADC1->DR to buffers (used in double buffer mode).
 ```
 
-#### ADC's:
+#### ADCs:
 
 ```
 ADC1 Channel 14: Samples audio voltage

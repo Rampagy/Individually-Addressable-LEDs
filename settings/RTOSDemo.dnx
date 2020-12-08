@@ -12,7 +12,7 @@
         <ByteLimit>50</ByteLimit>
     </Stack>
     <DebugChecksum>
-        <Checksum>599640647</Checksum>
+        <Checksum>2102055748</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -22,8 +22,8 @@
         <ShowArgs>0</ShowArgs>
     </CallStack>
     <Disassembly>
-        <MixedMode>1</MixedMode>
         <InstrCount>0</InstrCount>
+        <MixedMode>1</MixedMode>
     </Disassembly>
     <StackPlugin>
         <Enabled>1</Enabled>
@@ -107,8 +107,11 @@
         <Fmt1>{W}1:LASER	3	0</Fmt1>
         <Fmt2>{W}1:RED	3	0</Fmt2>
         <Fmt3>{W}1:sWaveIntensity	3	0</Fmt3>
-        <Fmt4>{W}1:ufFourierFrequency	0	9</Fmt4>
-        <Fmt5>{W}2:ulPatternCount	3	0</Fmt5>
+        <Fmt4>{W}1:ucB	3	0</Fmt4>
+        <Fmt5>{W}1:ucG	3	0</Fmt5>
+        <Fmt6>{W}1:ucR	3	0</Fmt6>
+        <Fmt7>{W}1:ufFourierFrequency	0	9</Fmt7>
+        <Fmt8>{W}2:ulPatternCount	3	0</Fmt8>
     </watch_formats>
     <Trace2>
         <Enabled>0</Enabled>
