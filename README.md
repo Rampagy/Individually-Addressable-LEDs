@@ -1,12 +1,14 @@
-# FreeRTOS Simple Example
+# Individually Addressable LEDs
 
-Example code using FreeRTOS to control individually addressable LEDs (SK6812).
+Example code using the onboard DSP, FreeRTOS, and DMA to control individually addressable LEDs (SK6812).  This project has both non-audio patterns and audio syncing patterns.
 
-https://youtu.be/5Bn3eNN9Ki0
+Non-audio syncing patterns: https://youtu.be/5Bn3eNN9Ki0
+
+Setup + Audio syncing patterns: https://youtu.be/zrTWR6r1QTw
 
 ## Architecture
 
-The idea is to use 2 different tasks to manage the LEDS. The tasks are listed below by priority (higher numbers will preempt lower numbers).
+The idea is to use 2 different tasks to manage the LEDs. The tasks are listed below by priority (higher numbers will preempt lower numbers).  I realize they could probably all be combined into one task, but more tasks means more learning.
 
 0.  Idle Task
     -  Does nothing
@@ -24,26 +26,55 @@ The idea is to use 2 different tasks to manage the LEDS. The tasks are listed be
 #### Timers
 
 ```
+Timer 2: 44.1 kHz timer for sampling audio voltage data 
 Timer 4: LED Data Line
+Timer 12: Collects runtime statistics (task time, computation times, ...)
 ```
 
 #### GPIO:
 
 ```
-B6: LED Data
+C4: Audio voltage data in
+B6: LED Data out
 D12: LED4 (GRN) - Indicates stack overflow for vCreatePattern
 D13: LED3 (ORG) - Indicates stack overflow for vUpdateLedStrip
 D14: LED5 (RED)
 D15: LED6 (BLU)
 ```
 
+#### DMA:
+
+```
+DMA1 Stream 0: Transfer duty cycles to PWM module.
+DMA2 Stream 0: Transfer ADC1->DR to buffers (used in double buffer mode).
+```
+
+#### ADCs:
+
+```
+ADC1 Channel 14: Samples audio voltage
+```
+
+
 ## Resources
+
+https://www.st.com/content/ccc/resource/technical/layouts_and_diagrams/schematic_pack/group1/60/36/18/8c/71/30/45/dc/MB997-F407VGT6-E01_Schematic/files/MB997-F407VGT6-E01_Schematic.pdf/jcr:content/translations/en.MB997-F407VGT6-E01_Schematic.pdf
+
+https://www.st.com/resource/en/user_manual/dm00039084-discovery-kit-with-stm32f407vg-mcu-stmicroelectronics.pdf
 
 http://socialledge.com/sjsu/index.php/FreeRTOS_Tutorial
 
 https://www.freertos.org/a00125.html
 
 https://cdn-shop.adafruit.com/product-files/1138/SK6812+LED+datasheet+.pdf
+
+https://www.iar.com/support/resources/articles/using-iar-embedded-workbench-for-arm-and-the-cmsis-dsp-library/
+
+https://stm32f4-discovery.net/2014/10/stm32f4-fft-example/
+
+https://www.keil.com/pack/doc/CMSIS/DSP/html/group__RealFFT.html#ga5d2ec62f3e35575eba467d09ddcd98b5
+
+https://community.st.com/s/question/0D50X00009XkibiSAB/stm32f207-adctimerdma-poor-peripheral-library-examples
 
 ## Notes
 Use `xTaskCreateStatic` to create a task with the stack in a static location

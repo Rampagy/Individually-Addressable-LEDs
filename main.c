@@ -35,6 +35,8 @@
 #include "system_stm32f4xx.h"
 #include "leds.h"
 #include "pattern.h"
+#include "audio.h"
+#include "stm32f4xx_rcc.h"
 
 /* Hardware and starter kit includes. */
 #include "arm_comm.h"
@@ -47,8 +49,8 @@
 #define mainCREATE_PATTERN_PRIORITY             ( tskIDLE_PRIORITY + 1UL )
 
 /* Task stack sizes. */
-#define configUPDATE_LEDS_STACK_SIZE            configMINIMAL_STACK_SIZE
-#define configCREATE_PATTERN_STACK_SIZE         configMINIMAL_STACK_SIZE
+#define configUPDATE_LEDS_STACK_SIZE            (configMINIMAL_STACK_SIZE * 10)
+#define configCREATE_PATTERN_STACK_SIZE         (configMINIMAL_STACK_SIZE * 40)
 
 /* Task Handles. */
 extern TaskHandle_t xUpdateLedsHandle;
@@ -58,21 +60,34 @@ extern TaskHandle_t xCreatePatternHandle;
 
 int main(void)
 {
+    /* Remove the secret clock doubler.... */
+    RCC->CFGR &= ~RCC_CFGR_PPRE1;
+    RCC->CFGR &= ~RCC_CFGR_PPRE2;
+
+    RCC->CFGR |= RCC_CFGR_PPRE1_DIV8;
+    RCC->CFGR |= RCC_CFGR_PPRE2_DIV4;
+
     /* Update the MCU and peripheral clock frequencies */
     SystemCoreClockUpdate();
 
     /* Initialize all four LEDs built into the starter kit */
     STM_EVAL_LEDInit( LED3 );       // Update LEDs stack overflow (ORG)
     STM_EVAL_LEDInit( LED4 );       // Create Pattern stack overflow (GRN)
-    STM_EVAL_LEDInit( LED5 );
+    STM_EVAL_LEDInit( LED5 );       // Sample timer complete before ADC conversion (RED)
     STM_EVAL_LEDInit( LED6 );
+
+    /* Initialize the debug timer. */
+    vInitDebug();
 
     /* Initialize the individually addressable LEDs. */
     vInitLeds();
 
+    /* Initialize the ADC/DMA/DSP instructions. */
+    vInitAudio();
+
     /* Spawn the tasks. */
     /*           Task,                  Task Name,          Stack Size,                             parameters,     priority,                           task handle */
-    xTaskCreate( vUpdateLedStrip,       "UpdateLeds",       configUPDATE_LEDS_STACK_SIZE,           NULL,           mainUPDATE_LEDS_PRIORITY,            &xUpdateLedsHandle );
+    xTaskCreate( vUpdateLedStrip,       "UpdateLeds",       configUPDATE_LEDS_STACK_SIZE,           NULL,           mainUPDATE_LEDS_PRIORITY,           &xUpdateLedsHandle );
     xTaskCreate( vCreatePattern,        "CreatePattern",    configCREATE_PATTERN_STACK_SIZE,        NULL,           mainCREATE_PATTERN_PRIORITY,        &xCreatePatternHandle );
 
     /* Start the scheduler. */

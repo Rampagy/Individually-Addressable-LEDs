@@ -66,7 +66,7 @@
                 </option>
                 <option>
                     <name>OGLastSavedByProductVersion</name>
-                    <state>8.50.4.26131</state>
+                    <state>8.50.9.33458</state>
                 </option>
                 <option>
                     <name>GeneralEnableMisra</name>
@@ -125,7 +125,7 @@
                 </option>
                 <option>
                     <name>OGUseCmsisDspLib</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>GRuntimeLibThreads</name>
@@ -485,7 +485,7 @@
             <name>AARM</name>
             <archiveVersion>2</archiveVersion>
             <data>
-                <version>10</version>
+                <version>11</version>
                 <wantNonLocal>1</wantNonLocal>
                 <debug>1</debug>
                 <option>
@@ -640,6 +640,10 @@
                 <option>
                     <name>AsmNoLiteralPool</name>
                     <state>0</state>
+                </option>
+                <option>
+                    <name>PreInclude</name>
+                    <state></state>
                 </option>
             </data>
         </settings>
@@ -1248,6 +1252,18 @@
         </group>
     </group>
     <file>
+        <name>$PROJ_DIR$\audio.c</name>
+    </file>
+    <file>
+        <name>$PROJ_DIR$\audio.h</name>
+    </file>
+    <file>
+        <name>$PROJ_DIR$\debug.c</name>
+    </file>
+    <file>
+        <name>$PROJ_DIR$\debug.h</name>
+    </file>
+    <file>
         <name>$PROJ_DIR$\FreeRTOSConfig.h</name>
     </file>
     <file>
@@ -1264,9 +1280,6 @@
     </file>
     <file>
         <name>$PROJ_DIR$\pattern.h</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\readme.txt</name>
     </file>
     <file>
         <name>$PROJ_DIR$\stm32f4xx_it.c</name>

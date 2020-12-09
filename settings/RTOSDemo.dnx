@@ -12,7 +12,7 @@
         <ByteLimit>50</ByteLimit>
     </Stack>
     <DebugChecksum>
-        <Checksum>3561953013</Checksum>
+        <Checksum>2102055748</Checksum>
     </DebugChecksum>
     <Exceptions>
         <StopOnUncaught>_ 0</StopOnUncaught>
@@ -96,11 +96,22 @@
         <ShowSource>0</ShowSource>
         <HideCovered>0</HideCovered>
     </CodeCoverage>
+    <Registers>
+        <regBase0>TIM2_ARR 10</regBase0>
+    </Registers>
+    <array_types>
+        <Fmt0>uint8_t[3]	3	0</Fmt0>
+    </array_types>
     <watch_formats>
         <Fmt0>{W}0:ultemp	4	0</Fmt0>
         <Fmt1>{W}1:LASER	3	0</Fmt1>
         <Fmt2>{W}1:RED	3	0</Fmt2>
         <Fmt3>{W}1:sWaveIntensity	3	0</Fmt3>
+        <Fmt4>{W}1:ucB	3	0</Fmt4>
+        <Fmt5>{W}1:ucG	3	0</Fmt5>
+        <Fmt6>{W}1:ucR	3	0</Fmt6>
+        <Fmt7>{W}1:ufFourierFrequency	0	9</Fmt7>
+        <Fmt8>{W}2:ulPatternCount	3	0</Fmt8>
     </watch_formats>
     <Trace2>
         <Enabled>0</Enabled>
@@ -173,24 +184,12 @@
         <mode>0</mode>
     </DisassembleMode>
     <Breakpoints2>
-        <Count>0</Count>
+        <Bp0>_ 0 "EMUL_CODE" "{$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c}.774.1" 0 0 1 "" 0 "" 0</Bp0>
+        <Bp1>_ 0 "EMUL_CODE" "{$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c}.805.1" 0 0 1 "" 0 "" 0</Bp1>
+        <Count>2</Count>
     </Breakpoints2>
     <Aliases>
-        <A0>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\misc.c" ""</A0>
-        <A1>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_exti.c" ""</A1>
-        <A2>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_gpio.c" ""</A2>
-        <A3>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c" ""</A3>
-        <A4>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_syscfg.c" ""</A4>
-        <A5>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\startup\system_stm32f4xx.c" ""</A5>
-        <A6>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Demo\CORTEX_M4F_STM32F407ZG-SK\stm32f4xx_it.c" ""</A6>
-        <A7>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\list.c" ""</A7>
-        <A8>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\portable\IAR\ARM_CM4F\port.c" ""</A8>
-        <A9>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\portable\IAR\ARM_CM4F\portasm.s" ""</A9>
-        <A10>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\portable\MemMang\heap_2.c" ""</A10>
-        <A11>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\queue.c" ""</A11>
-        <A12>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\tasks.c" ""</A12>
-        <A13>_ "C:\Users\ajsim\Desktop\FreeRTOS-master\FreeRTOS\Source\timers.c" ""</A13>
-        <Count>14</Count>
+        <Count>0</Count>
         <SuppressDialog>0</SuppressDialog>
     </Aliases>
 </settings>

@@ -10,6 +10,8 @@ static uint16_t usLedDutyCycleBuffer[TOTAL_PERIODS] = { 0 };
 /* Task handle. */
 TaskHandle_t xUpdateLedsHandle = NULL;
 
+/* Available stack size. */
+UBaseType_t xLedsAvailableStack = 0;
 
 /**
   * @brief  Task that initiates the PWM stream to the individually addressable LEDs.
@@ -20,10 +22,12 @@ void vUpdateLedStrip( void * pvParameters  )
 {
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = 10;
-    UBaseType_t xAvailableStack = 0;
 
     /* Initialize the xLastWakeTime variable with the current time. */
-     xLastWakeTime = xTaskGetTickCount();
+    xLastWakeTime = xTaskGetTickCount();
+
+    /* Initialize start time.*/
+    uint16_t usStartTime = TIM12->CNT;
 
      /* Create variable to hold the buffer index. */
      uint16_t usBufferIndex = 0;
@@ -68,16 +72,25 @@ void vUpdateLedStrip( void * pvParameters  )
         TIM_Cmd(TIM4, ENABLE);
 
         /* Check the stack size. */
-        xAvailableStack = uxTaskGetStackHighWaterMark( xUpdateLedsHandle );
+        xLedsAvailableStack = uxTaskGetStackHighWaterMark( xUpdateLedsHandle );
 
-        if (xAvailableStack <= 10)
+        if (xLedsAvailableStack <= 20)
         {
             /* Turn orangle LED on if stack overflow is imminent/detected. */
             STM_EVAL_LEDOn( LED3 );
         }
 
+        /* Update the high water mark for task length. */
+        if ( (uint16_t)TIM12->CNT - usStartTime > xDebugStats.usPatternClocks )
+        {
+            xDebugStats.usUpdateLEDsClocks = (uint16_t)TIM12->CNT - usStartTime;
+        }
+
         /* Wait for the next cycle. */
          vTaskDelayUntil( &xLastWakeTime, xFrequency );
+
+        /* Initialize the start time. */
+        usStartTime = TIM12->CNT;
     }
 }
 /*-----------------------------------------------------------*/
@@ -106,6 +119,11 @@ void DMA1_Stream0_IRQHandler()
 
     if( DMA_GetFlagStatus( DMA1_Stream0, DMA_FLAG_TCIF0 ) )
     {
+        /* Clear DMA interrupt flags */
+        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_TCIF0 );
+        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_HTIF0 );
+        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_FEIF0 );
+
         /* Disable timer 4 */
         TIM_Cmd( TIM4, DISABLE );
 
@@ -114,11 +132,6 @@ void DMA1_Stream0_IRQHandler()
 
         /* Reset the B6 pin to off. */
         GPIOB->ODR &= ~( 0x01 << 6 );
-
-        /* Clear DMA interrupt flags */
-        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_TCIF0 );
-        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_HTIF0 );
-        DMA_ClearFlag( DMA1_Stream0, DMA_FLAG_FEIF0 );
     }
 
     /* Re-enable interrupts and other tasks. */
@@ -141,10 +154,10 @@ void vInitLeds(void)
     NVIC_InitTypeDef NVIC_InitStructure;
 
     /* Enable the clock used for DMA. */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE); // 168 MHz
 
     /* Enable the clock used for GPIOB. */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE); // 168 MHz
 
     /* GPIO Configuration. */
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
@@ -157,13 +170,13 @@ void vInitLeds(void)
     /* Connect TIM4 pins to AF */
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_TIM4);
 
-    /* Enable the clock used for TIM4 (84MHz) */
+    /* Enable the clock used for TIM4 (42MHz) */
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 
     /* Time base configuration */
     TIM_TimeBaseStructure.TIM_Period = CLOCK_THRESH;
     TIM_TimeBaseStructure.TIM_Prescaler = 0;
-    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+    TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 
     TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
@@ -177,7 +190,7 @@ void vInitLeds(void)
     TIM_OC1Init(TIM4, &TIM_OCInitStructure);
     TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
 
-    /* DMA1 channel 2 configuration. */
+    /* DMA1 channel 0 configuration. */
     DMA_DeInit(DMA1_Stream0);
 
     DMA_InitStructure.DMA_Channel = DMA_Channel_2;
@@ -196,7 +209,7 @@ void vInitLeds(void)
 
     DMA_Init(DMA1_Stream0, &DMA_InitStructure);
     DMA_ITConfig(DMA1_Stream0, DMA_IT_TC, ENABLE);
-    DMA_ClearFlag(DMA1_Stream0,DMA_FLAG_TCIF0);
+    DMA_ClearFlag(DMA1_Stream0, DMA_FLAG_TCIF0);
 
     TIM_DMAConfig(TIM4, TIM_DMABase_CCR1, TIM_DMABurstLength_1Byte);
     TIM_SelectCCDMA(TIM4, ENABLE);
@@ -204,7 +217,7 @@ void vInitLeds(void)
 
     /* Set DMA interrupt when buffer transfers are complete. */
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream0_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configMAX_SYSCALL_INTERRUPT_PRIORITY + 2U;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 
@@ -212,7 +225,7 @@ void vInitLeds(void)
 
     /* Initalize the random number generator. */
     /* Call RNG_GetRandomNumber(void) to get a random number. */
-    RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG,ENABLE);
+    RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG, ENABLE);
     RNG_Cmd(ENABLE);
 
 }

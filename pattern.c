@@ -3,6 +3,9 @@
 /* Task handle. */
 TaskHandle_t xCreatePatternHandle = NULL;
 
+/* Available stack size. */
+UBaseType_t xPatternAvailableStack = 0;
+
 /* Cosine lookup table. */
 uint8_t cos255[360] = {
     255,255,255,255,255,254,254,254,253,253,253,252,252,251,251,250,249,249,248,
@@ -33,13 +36,19 @@ uint8_t cos255[360] = {
 void vCreatePattern( void * pvParameters  )
 {
     TickType_t xLastWakeTime;
-    UBaseType_t xAvailableStack = 0;
 
     /* Initialize the xLastWakeTime variable with the current time. */
     xLastWakeTime = xTaskGetTickCount();
 
+    /* Initialize start time.*/
+    uint16_t usStartTime = TIM12->CNT;
+
     /* Local variable for calculating the pattern. */
-    patterns_t eCurrentPattern = FIRE_SPARKS; // ulGetRandVal() % LAST_PATTERN;
+#if ( configALL == 1 ) || ( configNO_AUDIO == 1 )
+    patterns_t eCurrentPattern = (patterns_t)0;
+#elif ( configONLY_AUDIO == 1 )
+    patterns_t eCurrentPattern = (patterns_t)(AUDIO_TRAIN); // ( AUDIO_PATTERNS + 1 );
+#endif
     uint32_t ulPatternCount = 0;
 
     while ( 1 )
@@ -78,22 +87,254 @@ void vCreatePattern( void * pvParameters  )
             /* Check for next pattern. */
             vCheckNextPattern( &ulPatternCount, configFIRE_SPARKS_TIME_MS, &eCurrentPattern );
             break;
+
+        case RGB_AUDIO:
+            /* Create RGB audio pattern. */
+            vRgbAudio ( ulPatternCount );
+
+            /* Check for next pattern. */
+            vCheckNextPattern( &ulPatternCount, configRGB_AUDIO_TIME_MS, &eCurrentPattern );
+            break;
+
+        case AUDIO_TRAIN:
+            /* Create audio train pattern. */
+            vAudioTrain( ulPatternCount );
+
+            /* Check for next pattern. */
+            vCheckNextPattern( &ulPatternCount, configAUDIO_TRAIN_TIME_MS, &eCurrentPattern );
         }
 
         /* Check the stack size. */
-        xAvailableStack = uxTaskGetStackHighWaterMark( xCreatePatternHandle );
+        xPatternAvailableStack = uxTaskGetStackHighWaterMark( xCreatePatternHandle );
 
-        if ( xAvailableStack <= 20 )
+        if ( xPatternAvailableStack <= 20 )
         {
             /* Turn orangle LED on if stack overflow is imminent/detected. */
             STM_EVAL_LEDOn( LED4 );
         }
 
+        /* Update the high water mark for task length. */
+        if ( (uint16_t)TIM12->CNT - usStartTime > xDebugStats.usPatternClocks )
+        {
+            xDebugStats.usPatternClocks = (uint16_t)TIM12->CNT - usStartTime;
+        }
+
         /* Wait for the next cycle. */
         vTaskDelayUntil( &xLastWakeTime, configPATTERN_TASK_TIME_MS );
+
+        /* Initialize the start time. */
+        usStartTime = TIM12->CNT;
     }
 }
 /*-----------------------------------------------------------*/
+
+
+/**
+  * @brief  Create audio train pattern.
+  * @retval None
+  */
+void vAudioTrain ( const uint32_t ulPatternCount )
+{
+    /* The real FFT does not provide symmetry so divide FFT_SIZE by 2. */
+    float32_t ufFourierFrequency[RFFT_SIZE] = { 0.0F };
+
+    /* FFT max variables */
+    float32_t fMaxFFTMag = 0.0F;
+    uint32_t usMaxFFTIdx = 0U;
+
+    /* Do the FFT. */
+    vPerformFFT( ufFourierFrequency );
+
+    /* Get the max FFT magnitude and its index. */
+    ufFourierFrequency[0] = 0.0F;
+    arm_max_f32( ufFourierFrequency, RFFT_SIZE, &fMaxFFTMag, &usMaxFFTIdx );
+
+    if ( fMaxFFTMag > configAUDIO_TRAIN_MAX_BRIGHTNESS )
+    {
+        fMaxFFTMag = configAUDIO_TRAIN_MAX_BRIGHTNESS;
+    }
+
+    uint8_t ucR = 0;
+    if ( usMaxFFTIdx > 10)
+    {
+        ucR = 0;
+    }
+    else if ( usMaxFFTIdx < 3 )
+    {
+        if ( fMaxFFTMag > 4)
+        {
+            fMaxFFTMag -= 4;
+        }
+        else
+        {
+            fMaxFFTMag = 0;
+        }
+        ucR = (uint8_t)( 255 * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    }
+    else
+    {
+        if ( fMaxFFTMag > 4)
+        {
+            fMaxFFTMag -= 4;
+        }
+        else
+        {
+            fMaxFFTMag = 0;
+        }
+        ucR = (uint8_t)( lLinearLookup( usMaxFFTIdx, 255, 0, 3, 10 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    }
+
+    uint8_t ucG = 0;
+    if ( ( usMaxFFTIdx < 4 ) || ( usMaxFFTIdx > 18) )
+    {
+        ucG = 0;
+    }
+    else if ( usMaxFFTIdx <= 11 )
+    {
+        if ( fMaxFFTMag > 7)
+        {
+            fMaxFFTMag -= 7;
+        }
+        else
+        {
+            fMaxFFTMag = 0;
+        }
+        ucG = (uint8_t)( lLinearLookup( usMaxFFTIdx, 0, 255, 4, 11 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    }
+    else if ( usMaxFFTIdx >= 12 )
+    {
+        if ( fMaxFFTMag > 7)
+        {
+            fMaxFFTMag -= 7;
+        }
+        else
+        {
+            fMaxFFTMag = 0;
+        }
+        ucG = (uint8_t)( lLinearLookup( usMaxFFTIdx, 255, 0, 12, 18 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    }
+    else
+    {
+        ucG = 0;
+    }
+
+    uint8_t ucB = 0;
+    if ( ( usMaxFFTIdx > 20 ) )
+    {
+        if ( ( fMaxFFTMag > 8 ) && ( usMaxFFTIdx < 50 ) )
+        {
+            fMaxFFTMag -= 8;
+        }
+        else
+        {
+            fMaxFFTMag = 0;
+        }
+
+        ucB = (uint8_t)( 255 * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    }
+    else if ( usMaxFFTIdx < 13 )
+    {
+        ucB = 0;
+    }
+    else
+    {
+        if ( fMaxFFTMag > 12)
+        {
+            fMaxFFTMag -= 12;
+        }
+        else
+        {
+            fMaxFFTMag = 0;
+        }
+
+        ucB = (uint8_t)( lLinearLookup( usMaxFFTIdx, 0, 255, 13, 20 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    }
+
+    /* Modulate the number of LEDs that are lit based on the brightness. */
+    uint16_t usLedsToLight = (uint16_t)( ( NUMBER_OF_LEDS / 2 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    for ( int16_t i = (NUMBER_OF_LEDS / 2); i >= 0 ; i-- )
+    {
+        if ( i > (NUMBER_OF_LEDS / 2) - usLedsToLight )
+        {
+            /* Light the LEDs. */
+            vSetLed( i, ucR, ucG, ucB );
+            vSetLed( NUMBER_OF_LEDS - i, ucR, ucG, ucB );
+        }
+        else
+        {
+            /* Turn leds off. */
+            vSetLed( i, 0, 0, 0 );
+            vSetLed( NUMBER_OF_LEDS - i, 0, 0, 0 );
+        }
+    }
+
+    //vFillStrip( ucR, ucG, ucB );
+}
+/*-----------------------------------------------------------*/
+
+
+
+/**
+  * @brief  Create RGB audio pattern.
+  * @retval None
+  */
+void vRgbAudio ( const uint32_t ulPatternCount )
+{
+    /* The real FFT does not provide symmetry so divide FFT_SIZE by 2. */
+    float32_t ufFourierFrequency[RFFT_SIZE] = { 0.0F };
+
+    /* Do the FFT. */
+    vPerformFFT( ufFourierFrequency );
+
+    /* Create sections. */
+    uint16_t usSectionStartIdx[configRGB_AUDIO_SECTIONS] = { 1, 6, 12, 17 };
+    uint16_t usSectionOffset[configRGB_AUDIO_SECTIONS] = { 2, 3, 7, 8 };
+
+    /* Find the max value within each section. */
+    for ( uint16_t i = 0; i < configRGB_AUDIO_SECTIONS; i++ )
+    {
+        float_t fMaxVal = 0;
+
+        for ( uint16_t j = 0; j < configRGB_AUDIO_FREQUENCY_LENGTH; j++ )
+        {
+            uint16_t usColorIdx = j + usSectionStartIdx[i];
+
+            /* Track the max value within this section. */
+            if ( ufFourierFrequency[usColorIdx] > fMaxVal )
+            {
+                fMaxVal = ufFourierFrequency[usColorIdx];
+            }
+        }
+
+        /* Calculate brightness. */
+        uint16_t usLEDBrightness = (uint16_t)( (float32_t)255 * (fMaxVal - usSectionOffset[i]) / configRGB_AUDIO_MAX_BRIGHTNESS );
+
+        /* Set section color. */
+        for ( uint16_t j = i*configRGB_AUDIO_SECTION_LENGTH; j < (i + 1) * configRGB_AUDIO_SECTION_LENGTH; j++ )
+        {
+            /* Set the LED color. */
+            switch ( i % COLOR_CHANNELS )
+            {
+            default:
+            case 0:
+                /* Make this section RED. */
+                vSetLed( j, usLEDBrightness, 0, 0 );
+                break;
+            case 1:
+                /* Make this section GREEN. */
+                vSetLed( j, 0, usLEDBrightness, 0 );
+                break;
+            case 2:
+                /* Make this section BLUE. */
+                vSetLed( j, 0, 0, usLEDBrightness );
+                break;
+            }
+        }
+    }
+}
+/*-----------------------------------------------------------*/
+
+
 
 /**
   * @brief  Create fire/sparks pattern.
@@ -143,6 +384,8 @@ void vFireSparks ( const uint32_t ulPatternCount )
         }
     }
 }
+/*-----------------------------------------------------------*/
+
 
 
 /**
@@ -155,7 +398,24 @@ void vCheckNextPattern( uint32_t* ulPatternCount, const uint32_t ulPatternLength
     if ( *ulPatternCount >= ulPatternLength )
     {
         /* Switch to new pattern and reset the counter. */
-        *eCurrentPattern = ( patterns_t )( ( *eCurrentPattern + 1 ) % LAST_PATTERN );
+        *eCurrentPattern = ( patterns_t )( *eCurrentPattern + 1 );
+        if ( *eCurrentPattern == AUDIO_PATTERNS )
+        {
+            *eCurrentPattern = ( patterns_t )( *eCurrentPattern + 1 );
+        }
+
+#if ( configALL == 1 )
+        *eCurrentPattern = ( patterns_t )( *eCurrentPattern % LAST_PATTERN );
+#elif ( configNO_AUDIO == 1 )
+        *eCurrentPattern = ( patterns_t )( *eCurrentPattern % AUDIO_PATTERNS );
+#elif ( configONLY_AUDIO == 1 )
+        *eCurrentPattern = ( patterns_t )( *eCurrentPattern % LAST_PATTERN );
+        if ( *eCurrentPattern == 0 )
+        {
+            *eCurrentPattern = ( patterns_t )( AUDIO_PATTERNS + 1 );
+        }
+#endif
+
         *ulPatternCount = 0;
     }
 }
@@ -431,7 +691,7 @@ void vSetLed( int16_t LED, int16_t R, int16_t G, int16_t B )
 {
     if ( ( LED < NUMBER_OF_LEDS ) && ( LED >= 0 ) )
     {
-        /* Satureate each color channel. */
+        /* Saturate each color channel. */
         G = ( G < 0 ) * 0 + ( G > 255 ) * 255 + ( ( G >= 0 ) && ( G <= 255 ) ) * G;
         R = ( R < 0 ) * 0 + ( R > 255 ) * 255 + ( ( R >= 0 ) && ( R <= 255 ) ) * R;
         B = ( B < 0 ) * 0 + ( B > 255 ) * 255 + ( ( B >= 0 ) && ( B <= 255 ) ) * B;
@@ -459,6 +719,21 @@ uint8_t ucGetLed( int16_t LED, uint8_t color )
     return ucLedColor;
 }
 /*-----------------------------------------------------------*/
+
+
+/**
+  * @brief  Does a linear lookup.
+  * @retval Linear lookup of value.
+  */
+int32_t lLinearLookup( int32_t val, int32_t y2, int32_t y1, int32_t x2, int32_t x1 )
+{
+    int32_t slope = (y2 - y1) / (x2 - x1);
+    int32_t intercept = y2 - slope*x2;
+
+    return val*slope + intercept;
+}
+/*-----------------------------------------------------------*/
+
 
 
 /**

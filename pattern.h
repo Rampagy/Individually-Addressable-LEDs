@@ -8,7 +8,26 @@
 #include "semphr.h"
 
 /* Peripheral includes. */
+#include "stm32f4xx_tim.h"
+
+/* User includes. */
 #include "leds.h"
+#include "audio.h"
+#include "debug.h"
+
+/*-----------------------------------------------------------*/
+
+/* Set the LEDs mode. */
+#define configNO_AUDIO                                              ( 0 )
+#define configONLY_AUDIO                                            ( 1 )
+#define configALL                                                   ( 0 )
+
+/* Put the strip into debug audio mode.*/
+#define configAUDIO_DEBUG
+
+#if ( ( configNO_AUDIO + configONLY_AUDIO + configALL ) != 1 )
+#error "Only one config can be defined: configNO_AUDIO or configONLY_AUDIO or configALL"
+#endif
 
 /*-----------------------------------------------------------*/
 
@@ -18,6 +37,8 @@
 #define configAURORA_BOREALIS_TIME_MS                               ( 60000 )
 #define configLASER_TIME_MS                                         ( 30000 )
 #define configFIRE_SPARKS_TIME_MS                                   ( 60000 )
+#define configRGB_AUDIO_TIME_MS                                     ( 20000 )
+#define configAUDIO_TRAIN_TIME_MS                                   ( 20000 )
 
 /*-----------------------------------------------------------*/
 
@@ -67,12 +88,29 @@
 
 /*-----------------------------------------------------------*/
 
+/* RGB audio defines. */
+#define configRGB_AUDIO_SECTIONS                                    ( 4 )
+#define configRGB_AUDIO_SECTION_LENGTH                              ( NUMBER_OF_LEDS / configRGB_AUDIO_SECTIONS )
+#define configRGB_AUDIO_MAX_BRIGHTNESS                              ( 140 )
+#define configRGB_AUDIO_FREQUENCY_LENGTH                            ( 5 )
+
+/*-----------------------------------------------------------*/
+
+/* Audio train defines. */
+#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 140 )
+
+/*-----------------------------------------------------------*/
+
+
 /* Patterns */
 typedef enum {
     RAINBOW_CROSSFADE,
     AURORA_BOREALIS,
     LASER,
     FIRE_SPARKS,
+    AUDIO_PATTERNS,
+    RGB_AUDIO,
+    AUDIO_TRAIN,
     LAST_PATTERN
 } patterns_t;
 
@@ -98,6 +136,8 @@ void vFillStrip( uint8_t R, uint8_t G, uint8_t B );
 /* Set a single led. */
 void vSetLed( int16_t LED, int16_t R, int16_t G, int16_t B );
 
+int32_t lLinearLookup( int32_t val, int32_t y2, int32_t y1, int32_t x2, int32_t x1 );
+
 /* Get led color channel. */
 uint8_t ucGetLed( int16_t LED, uint8_t color );
 
@@ -113,19 +153,34 @@ void vAuroraBorealis( const uint32_t usPatternCount );
 /* Crossfade between the rainbow colors. */
 void vRainbowCrossfade( const uint32_t usPatternCount );
 
-/* Create an fire like pattern. */
+/* Create a fire like pattern. */
 void vFireSparks( const uint32_t usPatternCount );
+
+/* Create an RGB audio pattern. */
+void vRgbAudio ( const uint32_t ulPatternCount );
 
 /* Calcualte the crossfade operation. */
 void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G,uint8_t B );
 
 /* Get some randomly colored pixels. */
-void vGetRandPix(uint8_t* ucPix, uint16_t usNumPixels);
+void vGetRandPix( uint8_t* ucPix, uint16_t usNumPixels );
+
+/* Create an audio train pattern. */
+void vAudioTrain( const uint32_t usPatternCount );
 
 /*-----------------------------------------------------------*/
 
 /* Get LED buffer from other file (leds.c). */
 extern volatile uint8_t ucLeds[NUMBER_OF_LEDS][COLOR_CHANNELS];
+
+/* Get Adc sample buffer from other file (audio.c). */
+extern float32_t ufAdcSampleBuffer[ADC_SAMPLES];
+
+/* Get rfft instance from other file (audio.c). */
+extern arm_rfft_fast_instance_f32 S;
+
+/* Get debug stats from other file (debug.c) */
+extern xDebugStats_t xDebugStats;
 
 /*-----------------------------------------------------------*/
 
