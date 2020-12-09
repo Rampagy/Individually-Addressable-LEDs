@@ -4,9 +4,7 @@ Example code using the onboard DSP, FreeRTOS, and DMA to control individually ad
 
 Non-audio syncing patterns: https://youtu.be/5Bn3eNN9Ki0
 
-Audio syncing patterns: Coming soon to a YouTube near you
-
-Setup: Coming soon to a YouTube near you
+Setup + Audio syncing patterns: https://youtu.be/zrTWR6r1QTw
 
 ## Architecture
 
