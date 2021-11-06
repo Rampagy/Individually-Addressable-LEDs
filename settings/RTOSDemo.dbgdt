@@ -1246,7 +1246,7 @@
                     <item>slope</item>
                     <item>intercept</item>
                     <item>val</item>
-                    <item></item>
+                    <item />
                 </expressions>
                 <col-names>
                     <item>Expression</item>

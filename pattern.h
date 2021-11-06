@@ -23,7 +23,7 @@
 #define configALL                                                   ( 0 )
 
 /* Put the strip into debug audio mode.*/
-#define configAUDIO_DEBUG
+#define configSKIP_AUDIO_DEBUG                                      ( 1 )
 
 #if ( ( configNO_AUDIO + configONLY_AUDIO + configALL ) != 1 )
 #error "Only one config can be defined: configNO_AUDIO or configONLY_AUDIO or configALL"
@@ -97,7 +97,8 @@
 /*-----------------------------------------------------------*/
 
 /* Audio train defines. */
-#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 140 )
+#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 120 )
+#define configAUDIO_TRAIN_PREV_DECAY_RATE                           ( 2 )
 
 /*-----------------------------------------------------------*/
 

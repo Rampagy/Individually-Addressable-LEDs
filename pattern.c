@@ -139,6 +139,8 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     float32_t ufFourierFrequency[RFFT_SIZE] = { 0.0F };
 
     /* FFT max variables */
+    static float32_t fPrevMaxFFTMag = 0.0F;
+    static uint32_t usPrevMaxFFTIdx = 0U;
     float32_t fMaxFFTMag = 0.0F;
     uint32_t usMaxFFTIdx = 0U;
 
@@ -148,20 +150,28 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     /* Get the max FFT magnitude and its index. */
     ufFourierFrequency[0] = 0.0F;
     arm_max_f32( ufFourierFrequency, RFFT_SIZE, &fMaxFFTMag, &usMaxFFTIdx );
-
+    
+    // saturate the FFT magnitude
     if ( fMaxFFTMag > configAUDIO_TRAIN_MAX_BRIGHTNESS )
     {
         fMaxFFTMag = configAUDIO_TRAIN_MAX_BRIGHTNESS;
     }
 
-    uint8_t ucR = 0;
-    if ( usMaxFFTIdx > 10)
+    if (fPrevMaxFFTMag > fMaxFFTMag)
+    {
+        // if previous magnitude is bigger than current use it instead
+        fMaxFFTMag = fPrevMaxFFTMag;
+        usMaxFFTIdx = usPrevMaxFFTIdx;
+    }
+    
+    uint8_t ucR = 0; // red ( < 215 Hz)
+    if ( usMaxFFTIdx > 10) // (> 215 Hz)
     {
         ucR = 0;
     }
-    else if ( usMaxFFTIdx < 3 )
+    else if ( usMaxFFTIdx < 3 ) // (< 64.5 Hz)
     {
-        if ( fMaxFFTMag > 4)
+        if ( fMaxFFTMag > 4) // is my attempt to try and reduce some of the noise?
         {
             fMaxFFTMag -= 4;
         }
@@ -171,9 +181,9 @@ void vAudioTrain ( const uint32_t ulPatternCount )
         }
         ucR = (uint8_t)( 255 * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
     }
-    else
+    else // (>= 64.5Hz && <= 215 Hz)
     {
-        if ( fMaxFFTMag > 4)
+        if ( fMaxFFTMag > 4) // // is my attempt to try and reduce some of the noise?
         {
             fMaxFFTMag -= 4;
         }
@@ -184,14 +194,14 @@ void vAudioTrain ( const uint32_t ulPatternCount )
         ucR = (uint8_t)( lLinearLookup( usMaxFFTIdx, 255, 0, 3, 10 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
     }
 
-    uint8_t ucG = 0;
-    if ( ( usMaxFFTIdx < 4 ) || ( usMaxFFTIdx > 18) )
+    uint8_t ucG = 0; // green ( 84 Hz to 387 Hz)
+    if ( ( usMaxFFTIdx < 4 ) || ( usMaxFFTIdx > 18) ) // ( < 84 Hz ) or ( > 387 Hz )
     {
         ucG = 0;
     }
-    else if ( usMaxFFTIdx <= 11 )
+    else if ( usMaxFFTIdx <= 11 ) // ( <= 236.5 Hz )
     {
-        if ( fMaxFFTMag > 7)
+        if ( fMaxFFTMag > 7) // is my attempt to try and reduce some of the noise?
         {
             fMaxFFTMag -= 7;
         }
@@ -201,9 +211,9 @@ void vAudioTrain ( const uint32_t ulPatternCount )
         }
         ucG = (uint8_t)( lLinearLookup( usMaxFFTIdx, 0, 255, 4, 11 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
     }
-    else if ( usMaxFFTIdx >= 12 )
+    else if ( usMaxFFTIdx >= 12 ) // ( >= 258 Hz )
     {
-        if ( fMaxFFTMag > 7)
+        if ( fMaxFFTMag > 7) // is my attempt to try and reduce some of the noise?
         {
             fMaxFFTMag -= 7;
         }
@@ -218,10 +228,10 @@ void vAudioTrain ( const uint32_t ulPatternCount )
         ucG = 0;
     }
 
-    uint8_t ucB = 0;
+    uint8_t ucB = 0;  // blue ( > 430 Hz )
     if ( ( usMaxFFTIdx > 20 ) )
     {
-        if ( ( fMaxFFTMag > 8 ) && ( usMaxFFTIdx < 50 ) )
+        if ( ( fMaxFFTMag > 8 ) && ( usMaxFFTIdx < 50 ) ) // is my attempt to try and reduce some of the noise?
         {
             fMaxFFTMag -= 8;
         }
@@ -238,7 +248,7 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     }
     else
     {
-        if ( fMaxFFTMag > 12)
+        if ( fMaxFFTMag > 12) // is my attempt to try and reduce some of the noise?
         {
             fMaxFFTMag -= 12;
         }
@@ -249,6 +259,7 @@ void vAudioTrain ( const uint32_t ulPatternCount )
 
         ucB = (uint8_t)( lLinearLookup( usMaxFFTIdx, 0, 255, 13, 20 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
     }
+
 
     /* Modulate the number of LEDs that are lit based on the brightness. */
     uint16_t usLedsToLight = (uint16_t)( ( NUMBER_OF_LEDS / 2 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
@@ -268,7 +279,7 @@ void vAudioTrain ( const uint32_t ulPatternCount )
         }
     }
 
-    //vFillStrip( ucR, ucG, ucB );
+    fPrevMaxFFTMag = fMaxFFTMag - configAUDIO_TRAIN_PREV_DECAY_RATE;
 }
 /*-----------------------------------------------------------*/
 
@@ -413,6 +424,14 @@ void vCheckNextPattern( uint32_t* ulPatternCount, const uint32_t ulPatternLength
         if ( *eCurrentPattern == 0 )
         {
             *eCurrentPattern = ( patterns_t )( AUDIO_PATTERNS + 1 );
+        }
+#endif
+
+#if ( configSKIP_AUDIO_DEBUG == 1 )
+        if ( *eCurrentPattern == RGB_AUDIO )
+        {
+            // Assumes there is always at least one higher audio pattern
+            *eCurrentPattern = ( patterns_t )( *eCurrentPattern + 1 );
         }
 #endif
 
