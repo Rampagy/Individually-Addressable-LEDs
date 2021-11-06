@@ -157,9 +157,10 @@ void vAudioTrain ( const uint32_t ulPatternCount )
         fMaxFFTMag = configAUDIO_TRAIN_MAX_BRIGHTNESS;
     }
 
-    if (fPrevMaxFFTMag > fMaxFFTMag)
+    if ( fPrevMaxFFTMag + configAUDIO_TRAIN_SWITCH_HYSTERESIS > fMaxFFTMag )
     {
-        // if previous magnitude is bigger than current use it instead
+        // Current must be bigger by configAUDIO_TRAIN_SWITCH_HYSTERESIS
+        // or more in order for it to be switched to
         fMaxFFTMag = fPrevMaxFFTMag;
         usMaxFFTIdx = usPrevMaxFFTIdx;
     }

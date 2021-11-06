@@ -98,7 +98,8 @@
 
 /* Audio train defines. */
 #define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 120 )
-#define configAUDIO_TRAIN_PREV_DECAY_RATE                           ( 2 )
+#define configAUDIO_TRAIN_PREV_DECAY_RATE                           ( 0.5 )
+#define configAUDIO_TRAIN_SWITCH_HYSTERESIS                         ( 15 )
 
 /*-----------------------------------------------------------*/
 
