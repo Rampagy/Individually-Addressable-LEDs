@@ -76,6 +76,10 @@ https://www.keil.com/pack/doc/CMSIS/DSP/html/group__RealFFT.html#ga5d2ec62f3e355
 
 https://community.st.com/s/question/0D50X00009XkibiSAB/stm32f207-adctimerdma-poor-peripheral-library-examples
 
+https://arm-software.github.io/CMSIS_5/DSP/html/index.html
+
+https://www.freertos.org/FreeRTOS-Coding-Standard-and-Style-Guide.html
+
 ## Notes
 Use `xTaskCreateStatic` to create a task with the stack in a static location
 

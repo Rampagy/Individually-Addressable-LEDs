@@ -98,8 +98,9 @@
 
 /* Audio train defines. */
 #define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 120 )
-#define configAUDIO_TRAIN_PREV_DECAY_RATE                           ( 0.5 )
-#define configAUDIO_TRAIN_SWITCH_HYSTERESIS                         ( 15 )
+#define configAUDIO_TRAIN_PREV_DECAY_RATE                           ( 1 )
+#define configAUDIO_TRAIN_SWITCH_HYSTERESIS                         ( 5 )
+#define configAUDIO_TRAIN_TRIANG_GAIN                               ( 10 )
 
 /*-----------------------------------------------------------*/
 
@@ -139,6 +140,8 @@ void vFillStrip( uint8_t R, uint8_t G, uint8_t B );
 void vSetLed( int16_t LED, int16_t R, int16_t G, int16_t B );
 
 int32_t lLinearLookup( int32_t val, int32_t y2, int32_t y1, int32_t x2, int32_t x1 );
+
+float32_t fTriangWeight( float32_t* ufFourierFrequency, float32_t fTriangCent, float32_t fTriangWidth );
 
 /* Get led color channel. */
 uint8_t ucGetLed( int16_t LED, uint8_t color );

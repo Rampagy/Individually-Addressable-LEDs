@@ -27,6 +27,9 @@ uint8_t cos255[360] = {
     254,255,255,255,255,255,255
 };
 
+#define SAT_ZERO_MACRO(x) ( (x) < 0.0F ? 0.0F : (x) )
+#define SAT_RFFT_LEN_MACRO(x) ( (x) > RFFT_SIZE ? RFFT_SIZE : (x) )
+
 /**
   * @brief  Task chooses pattern and calculates the colors.
   * @note   Executes every 10ms.
@@ -151,7 +154,7 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     ufFourierFrequency[0] = 0.0F;
     arm_max_f32( ufFourierFrequency, RFFT_SIZE, &fMaxFFTMag, &usMaxFFTIdx );
     
-    // saturate the FFT magnitude
+    // Saturate the FFT magnitude
     if ( fMaxFFTMag > configAUDIO_TRAIN_MAX_BRIGHTNESS )
     {
         fMaxFFTMag = configAUDIO_TRAIN_MAX_BRIGHTNESS;
@@ -160,110 +163,31 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     if ( fPrevMaxFFTMag + configAUDIO_TRAIN_SWITCH_HYSTERESIS > fMaxFFTMag )
     {
         // Current must be bigger by configAUDIO_TRAIN_SWITCH_HYSTERESIS
-        // or more in order for it to be switched to
+        // or more in order for the new frequency to be switched to
         fMaxFFTMag = fPrevMaxFFTMag;
         usMaxFFTIdx = usPrevMaxFFTIdx;
     }
-    
-    uint8_t ucR = 0; // red ( < 215 Hz)
-    if ( usMaxFFTIdx > 10) // (> 215 Hz)
-    {
-        ucR = 0;
-    }
-    else if ( usMaxFFTIdx < 3 ) // (< 64.5 Hz)
-    {
-        if ( fMaxFFTMag > 4) // is my attempt to try and reduce some of the noise?
-        {
-            fMaxFFTMag -= 4;
-        }
-        else
-        {
-            fMaxFFTMag = 0;
-        }
-        ucR = (uint8_t)( 255 * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    }
-    else // (>= 64.5Hz && <= 215 Hz)
-    {
-        if ( fMaxFFTMag > 4) // // is my attempt to try and reduce some of the noise?
-        {
-            fMaxFFTMag -= 4;
-        }
-        else
-        {
-            fMaxFFTMag = 0;
-        }
-        ucR = (uint8_t)( lLinearLookup( usMaxFFTIdx, 255, 0, 3, 10 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    }
 
-    uint8_t ucG = 0; // green ( 84 Hz to 387 Hz)
-    if ( ( usMaxFFTIdx < 4 ) || ( usMaxFFTIdx > 18) ) // ( < 84 Hz ) or ( > 387 Hz )
-    {
-        ucG = 0;
-    }
-    else if ( usMaxFFTIdx <= 11 ) // ( <= 236.5 Hz )
-    {
-        if ( fMaxFFTMag > 7) // is my attempt to try and reduce some of the noise?
-        {
-            fMaxFFTMag -= 7;
-        }
-        else
-        {
-            fMaxFFTMag = 0;
-        }
-        ucG = (uint8_t)( lLinearLookup( usMaxFFTIdx, 0, 255, 4, 11 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    }
-    else if ( usMaxFFTIdx >= 12 ) // ( >= 258 Hz )
-    {
-        if ( fMaxFFTMag > 7) // is my attempt to try and reduce some of the noise?
-        {
-            fMaxFFTMag -= 7;
-        }
-        else
-        {
-            fMaxFFTMag = 0;
-        }
-        ucG = (uint8_t)( lLinearLookup( usMaxFFTIdx, 255, 0, 12, 18 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    }
-    else
-    {
-        ucG = 0;
-    }
+    float32_t bins[6] = { 0.0F };
+    //bins[0] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  100.0F,   90.0F);
+    bins[1] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  150.0F,  150.0F);
+    bins[2] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  500.0F,  300.0F);
+    bins[3] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 1100.0F,  600.0F);
+    //bins[4] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 2500.0F, 3750.0F);
+    //bins[5] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 6250.0F, 9750.0F);
 
-    uint8_t ucB = 0;  // blue ( > 430 Hz )
-    if ( ( usMaxFFTIdx > 20 ) )
-    {
-        if ( ( fMaxFFTMag > 8 ) && ( usMaxFFTIdx < 50 ) ) // is my attempt to try and reduce some of the noise?
-        {
-            fMaxFFTMag -= 8;
-        }
-        else
-        {
-            fMaxFFTMag = 0;
-        }
+    /** Set R, G and B */
+    uint8_t ucR = (uint8_t)bins[1];
+    uint8_t ucG = (uint8_t)bins[2];
+    uint8_t ucB = (uint8_t)bins[3];
 
-        ucB = (uint8_t)( 255 * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    }
-    else if ( usMaxFFTIdx < 13 )
-    {
-        ucB = 0;
-    }
-    else
-    {
-        if ( fMaxFFTMag > 12) // is my attempt to try and reduce some of the noise?
-        {
-            fMaxFFTMag -= 12;
-        }
-        else
-        {
-            fMaxFFTMag = 0;
-        }
-
-        ucB = (uint8_t)( lLinearLookup( usMaxFFTIdx, 0, 255, 13, 20 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
-    }
-
-
+    // Right now we use only 3 bins to determine color but we use the whole frequency spectrum
+    // to determine the brightness.  Is this a bad thing? Maybe people like it?
+    // Should we use the whole frequency spectrum?  Should we only use the three bins?
     /* Modulate the number of LEDs that are lit based on the brightness. */
     uint16_t usLedsToLight = (uint16_t)( ( NUMBER_OF_LEDS / 2 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+
+    /* Set the LEDs */
     for ( int16_t i = (NUMBER_OF_LEDS / 2); i >= 0 ; i-- )
     {
         if ( i > (NUMBER_OF_LEDS / 2) - usLedsToLight )
@@ -281,6 +205,10 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     }
 
     fPrevMaxFFTMag = fMaxFFTMag - configAUDIO_TRAIN_PREV_DECAY_RATE;
+    if (fPrevMaxFFTMag < 0)
+    {
+        fPrevMaxFFTMag = 0;
+    }
 }
 /*-----------------------------------------------------------*/
 
@@ -751,6 +679,70 @@ int32_t lLinearLookup( int32_t val, int32_t y2, int32_t y1, int32_t x2, int32_t 
     int32_t intercept = y2 - slope*x2;
 
     return val*slope + intercept;
+}
+/*-----------------------------------------------------------*/
+
+
+/**
+  * @brief  Calculates area under the curve.  Uses a triangle for weighting curve.
+  * @note   Areas calculated using this function can be compared to each other 
+                because the height of the weighting triangle is dynamically 
+                adjusted to accomodate varying bandwidths.
+  * @param  ufFourierFrequency :: Array of magnitudes from the FFT.
+  * @param  TriangCent :: Center of weighting triangle (hertz).
+  * @param  TriangWidth :: Width of the weighting triangle (base/2, hertz).
+  * @retval Normalized area of under the curve.
+  */
+float32_t fTriangWeight( float32_t* ufFourierFrequency, float32_t fTriangCent, float32_t fTriangWidth )
+{
+  /** The weighting triangle must always return an area of 1 
+    * before being multiplied by the frequency magnitudes.
+    *
+    * Area of Triangle:
+    *  1 = h*b/2     (b = TriangWidth*2)
+    */
+
+    float32_t fH = 1.0F/fTriangWidth;
+
+  /**  Now linearly interpolate and apply the scalings to the FFT.
+    */
+
+  /** Increasing triangle slope. fH will be the y-intercept because the
+    * traingle will be centered on the y-axis.
+    */
+
+    float32_t fSlope = fH / fTriangWidth;
+
+    float32_t fSummation = 0.0F;
+    uint32_t uInterpStart = (uint32_t)(SAT_ZERO_MACRO((fTriangCent- fTriangWidth)) / HERTZ_PER_INDEX);
+    float32_t fInterpStop = fTriangCent / HERTZ_PER_INDEX;
+
+    uint32_t uIdx= 0U;
+    for (uint32_t uI = uInterpStart; uI <= fInterpStop; uI++, uIdx++)
+    {
+        /** Look up the value to weight the frequency by and then sum it. */
+        fSummation += ufFourierFrequency[uI] * (uIdx * fSlope + fH);
+    }
+
+  /** Decreasing triangle slope. fH will be the y-intercept because the
+    * traingle will be centered on the y-axis.
+    */
+    
+    /** This time the slope is negative. */
+    fSlope *= -1;
+    
+    /** This interp starts at the center. */
+    uInterpStart = (uint32_t)(fTriangCent / HERTZ_PER_INDEX);
+    fInterpStop = SAT_RFFT_LEN_MACRO((fTriangCent + fTriangWidth) / HERTZ_PER_INDEX);
+
+    uIdx= 0U;
+    for (uint32_t uI = uInterpStart; uI <= fInterpStop; uI++, uIdx++)
+    {
+        /** Look up the value to weight the frequency by and then sum it. */
+        fSummation += ufFourierFrequency[uI] * (uIdx * fSlope + fH);
+    }
+
+    return fSummation;
 }
 /*-----------------------------------------------------------*/
 

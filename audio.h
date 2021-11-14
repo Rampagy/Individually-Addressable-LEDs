@@ -23,6 +23,7 @@
 #define CFFT_SIZE                                   (ADC_SAMPLES / 2)
 #define RFFT_SIZE                                   (CFFT_SIZE / 2)
 #define SAMPLING_FREQUENCY                          44100U
+#define HERTZ_PER_INDEX                             ((float32_t)SAMPLING_FREQUENCY / ADC_SAMPLES)
 
 /*-----------------------------------------------------------*/
 
