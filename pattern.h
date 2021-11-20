@@ -38,7 +38,7 @@
 #define configLASER_TIME_MS                                         ( 30000 )
 #define configFIRE_SPARKS_TIME_MS                                   ( 60000 )
 #define configRGB_AUDIO_TIME_MS                                     ( 20000 )
-#define configAUDIO_TRAIN_TIME_MS                                   ( 20000 )
+#define configAUDIO_MAGNITUDE_VIS_TIME_MS                           ( 20000 )
 
 /*-----------------------------------------------------------*/
 
@@ -97,10 +97,10 @@
 /*-----------------------------------------------------------*/
 
 /* Audio train defines. */
-#define configAUDIO_TRAIN_MAX_BRIGHTNESS                            ( 120 )
-#define configAUDIO_TRAIN_PREV_DECAY_RATE                           ( 1 )
-#define configAUDIO_TRAIN_SWITCH_HYSTERESIS                         ( 5 )
-#define configAUDIO_TRAIN_TRIANG_GAIN                               ( 10 )
+#define configAUDIO_MAGNITUDE_VIS_MAX_BRIGHTNESS                    ( 120 )
+#define configAUDIO_MAGNITUDE_VIS_PREV_DECAY_RATE                   ( 1 )
+#define configAUDIO_MAGNITUDE_VIS_SWITCH_HYSTERESIS                 ( 5 )
+#define configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN                       ( 10 )
 
 /*-----------------------------------------------------------*/
 
@@ -113,7 +113,7 @@ typedef enum {
     FIRE_SPARKS,
     AUDIO_PATTERNS,
     RGB_AUDIO,
-    AUDIO_TRAIN,
+    AUDIO_MAGNITUDE_VIS,
     LAST_PATTERN
 } patterns_t;
 

@@ -50,7 +50,7 @@ void vCreatePattern( void * pvParameters  )
 #if ( configALL == 1 ) || ( configNO_AUDIO == 1 )
     patterns_t eCurrentPattern = (patterns_t)0;
 #elif ( configONLY_AUDIO == 1 )
-    patterns_t eCurrentPattern = (patterns_t)(AUDIO_TRAIN); // ( AUDIO_PATTERNS + 1 );
+    patterns_t eCurrentPattern = (patterns_t)(AUDIO_MAGNITUDE_VIS); // ( AUDIO_PATTERNS + 1 );
 #endif
     uint32_t ulPatternCount = 0;
 
@@ -99,12 +99,12 @@ void vCreatePattern( void * pvParameters  )
             vCheckNextPattern( &ulPatternCount, configRGB_AUDIO_TIME_MS, &eCurrentPattern );
             break;
 
-        case AUDIO_TRAIN:
+        case AUDIO_MAGNITUDE_VIS:
             /* Create audio train pattern. */
             vAudioTrain( ulPatternCount );
 
             /* Check for next pattern. */
-            vCheckNextPattern( &ulPatternCount, configAUDIO_TRAIN_TIME_MS, &eCurrentPattern );
+            vCheckNextPattern( &ulPatternCount, configAUDIO_MAGNITUDE_VIS_TIME_MS, &eCurrentPattern );
         }
 
         /* Check the stack size. */
@@ -155,26 +155,26 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     arm_max_f32( ufFourierFrequency, RFFT_SIZE, &fMaxFFTMag, &usMaxFFTIdx );
     
     // Saturate the FFT magnitude
-    if ( fMaxFFTMag > configAUDIO_TRAIN_MAX_BRIGHTNESS )
+    if ( fMaxFFTMag > configAUDIO_MAGNITUDE_VIS_MAX_BRIGHTNESS )
     {
-        fMaxFFTMag = configAUDIO_TRAIN_MAX_BRIGHTNESS;
+        fMaxFFTMag = configAUDIO_MAGNITUDE_VIS_MAX_BRIGHTNESS;
     }
 
-    if ( fPrevMaxFFTMag + configAUDIO_TRAIN_SWITCH_HYSTERESIS > fMaxFFTMag )
+    if ( fPrevMaxFFTMag + configAUDIO_MAGNITUDE_VIS_SWITCH_HYSTERESIS > fMaxFFTMag )
     {
-        // Current must be bigger by configAUDIO_TRAIN_SWITCH_HYSTERESIS
+        // Current must be bigger by configAUDIO_MAGNITUDE_VIS_SWITCH_HYSTERESIS
         // or more in order for the new frequency to be switched to
         fMaxFFTMag = fPrevMaxFFTMag;
         usMaxFFTIdx = usPrevMaxFFTIdx;
     }
 
     float32_t bins[6] = { 0.0F };
-    //bins[0] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  100.0F,   90.0F);
-    bins[1] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  150.0F,  150.0F);
-    bins[2] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  500.0F,  300.0F);
-    bins[3] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 1100.0F,  600.0F);
-    //bins[4] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 2500.0F, 3750.0F);
-    //bins[5] = configAUDIO_TRAIN_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 6250.0F, 9750.0F);
+    //bins[0] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  100.0F,   90.0F);
+    bins[1] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  150.0F,  150.0F);
+    bins[2] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  500.0F,  300.0F);
+    bins[3] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 1100.0F,  600.0F);
+    //bins[4] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 2500.0F, 3750.0F);
+    //bins[5] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 6250.0F, 9750.0F);
 
     /** Set R, G and B */
     uint8_t ucR = (uint8_t)bins[1];
@@ -185,7 +185,7 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     // to determine the brightness.  Is this a bad thing? Maybe people like it?
     // Should we use the whole frequency spectrum?  Should we only use the three bins?
     /* Modulate the number of LEDs that are lit based on the brightness. */
-    uint16_t usLedsToLight = (uint16_t)( ( NUMBER_OF_LEDS / 2 ) * fMaxFFTMag / configAUDIO_TRAIN_MAX_BRIGHTNESS );
+    uint16_t usLedsToLight = (uint16_t)( ( NUMBER_OF_LEDS / 2 ) * fMaxFFTMag / configAUDIO_MAGNITUDE_VIS_MAX_BRIGHTNESS );
 
     /* Set the LEDs */
     for ( int16_t i = (NUMBER_OF_LEDS / 2); i >= 0 ; i-- )
@@ -204,7 +204,7 @@ void vAudioTrain ( const uint32_t ulPatternCount )
         }
     }
 
-    fPrevMaxFFTMag = fMaxFFTMag - configAUDIO_TRAIN_PREV_DECAY_RATE;
+    fPrevMaxFFTMag = fMaxFFTMag - configAUDIO_MAGNITUDE_VIS_PREV_DECAY_RATE;
     if (fPrevMaxFFTMag < 0)
     {
         fPrevMaxFFTMag = 0;
