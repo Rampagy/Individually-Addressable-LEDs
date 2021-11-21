@@ -101,10 +101,19 @@ void vCreatePattern( void * pvParameters  )
 
         case AUDIO_MAGNITUDE_VIS:
             /* Create audio train pattern. */
-            vAudioTrain( ulPatternCount );
+            vMagVisualization( ulPatternCount );
 
             /* Check for next pattern. */
             vCheckNextPattern( &ulPatternCount, configAUDIO_MAGNITUDE_VIS_TIME_MS, &eCurrentPattern );
+            break;
+            
+        case SPECTRUM_ANALYZER:
+            /* Create spectrum visualizer pattern. */
+            vSpectrumAnalyzer( ulPatternCount );
+            
+            /* Check for next pattern. */
+            vCheckNextPattern( &ulPatternCount, configSPECTRUM_ANALYZER_TIME_MS, &eCurrentPattern );
+            break;
         }
 
         /* Check the stack size. */
@@ -133,10 +142,96 @@ void vCreatePattern( void * pvParameters  )
 
 
 /**
-  * @brief  Create audio train pattern.
+  * @brief  Create spectrum analyzer pattern.
   * @retval None
   */
-void vAudioTrain ( const uint32_t ulPatternCount )
+void vSpectrumAnalyzer( const uint32_t ulPatternCount )
+{
+    /* The real FFT does not provide symmetry so divide FFT_SIZE by 2. */
+    float32_t ufFourierFrequency[RFFT_SIZE] = { 0.0F };
+    
+    /* Do the FFT. */
+    vPerformFFT( ufFourierFrequency );
+    
+    /* 
+    512 indices for the whole spectrum (SAMPLING_FREQUENCY / 2) = 22050Hz
+    Only want to use from 0hz to 6000 Hz
+    6000/22050 * 512 = 139
+    144 / 512 * 22050 = 6201 Hz to have a perfect 1 LED per Freq
+    Use indices 1 through NUMBER_OF_LEDS+1  (avoiding the dc offset at idx 1)
+    */
+    //configAUDIO_SPECTRUM_GREEN_SWITCH_PERC
+    //configAUDIO_SPECTRUM_BLUE_SWITCH_PERC
+    //configAUDIO_SPECTRUM_MAX_BRIGHTNESS
+    
+    for ( uint32_t i = 1; i < NUMBER_OF_LEDS+1; i++ )
+    {
+        /* Saturate the FFTs maximum amplitude. */
+        if ( ufFourierFrequency[i] > configAUDIO_SPECTRUM_MAX_BRIGHTNESS )
+        {
+            ufFourierFrequency[i] = configAUDIO_SPECTRUM_MAX_BRIGHTNESS;
+        }
+        
+        /* Determine which stage we are in (red, green or blue)*/
+        float32_t percent_complete = (float32_t)i / NUMBER_OF_LEDS * 100;
+        
+        uint8_t ucR = 0;
+        uint8_t ucG = 0;
+        uint8_t ucB = 0;
+        if ( percent_complete < configAUDIO_SPECTRUM_GREEN_SWITCH_PERC )
+        {
+            /* RED ZONE */
+            ucR = 255;
+            ucG = i * (255 / (NUMBER_OF_LEDS/4));
+        }
+        else if ( percent_complete < configAUDIO_SPECTRUM_BLUE_SWITCH_PERC )
+        {
+            /* GREEN ZONE */
+            ucG = 255;
+            
+            if (percent_complete < 50U)
+            {
+                /* RAMP RED DOWN */
+                ucR = ((NUMBER_OF_LEDS/2) - i) * (255 / (NUMBER_OF_LEDS/4));
+            }
+            else
+            {
+                /* RAMP BLUE UP */
+                ucB = (i - (NUMBER_OF_LEDS/2)) * (255 / (NUMBER_OF_LEDS/4));
+            }
+        }
+        else
+        {
+            /* BLUE ZONE */
+            ucB = 255;
+            ucG = (NUMBER_OF_LEDS - i) * (255 / (NUMBER_OF_LEDS/4));
+        }
+        
+        if ( ufFourierFrequency[i] < configAUDIO_SPECTRUM_NOISE_FLOOR )
+        {
+            ufFourierFrequency[i] = 0;
+        }
+        
+        /* Scale brightness based on frequncy magnitude. */
+        ucR = (uint8_t)(ufFourierFrequency[i] * ucR / configAUDIO_SPECTRUM_MAX_BRIGHTNESS);
+        ucG = (uint8_t)(ufFourierFrequency[i] * ucG / configAUDIO_SPECTRUM_MAX_BRIGHTNESS);
+        ucB = (uint8_t)(ufFourierFrequency[i] * ucB / configAUDIO_SPECTRUM_MAX_BRIGHTNESS);
+        
+        /* Set the corresponding LED */
+        vSetLed( i-1, ucR, ucG, ucB );
+    }
+}
+/*-----------------------------------------------------------*/
+
+
+
+
+
+/**
+  * @brief  Create magnitude visualization pattern.
+  * @retval None
+  */
+void vMagVisualization ( const uint32_t ulPatternCount )
 {
     /* The real FFT does not provide symmetry so divide FFT_SIZE by 2. */
     float32_t ufFourierFrequency[RFFT_SIZE] = { 0.0F };
@@ -172,7 +267,7 @@ void vAudioTrain ( const uint32_t ulPatternCount )
     //bins[0] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  100.0F,   90.0F);
     bins[1] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  150.0F,  150.0F);
     bins[2] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency,  500.0F,  300.0F);
-    bins[3] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 1100.0F,  600.0F);
+    bins[3] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 1100.0F,  1500.0F);
     //bins[4] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 2500.0F, 3750.0F);
     //bins[5] = configAUDIO_MAGNITUDE_VIS_TRIANG_GAIN * fTriangWeight(ufFourierFrequency, 6250.0F, 9750.0F);
 

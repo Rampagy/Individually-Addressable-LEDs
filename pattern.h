@@ -38,7 +38,8 @@
 #define configLASER_TIME_MS                                         ( 30000 )
 #define configFIRE_SPARKS_TIME_MS                                   ( 60000 )
 #define configRGB_AUDIO_TIME_MS                                     ( 20000 )
-#define configAUDIO_MAGNITUDE_VIS_TIME_MS                           ( 20000 )
+#define configAUDIO_MAGNITUDE_VIS_TIME_MS                           ( 30000 )
+#define configSPECTRUM_ANALYZER_TIME_MS                             ( 60000 )
 
 /*-----------------------------------------------------------*/
 
@@ -104,6 +105,14 @@
 
 /*-----------------------------------------------------------*/
 
+/* Audio spectrum defines. */
+#define configAUDIO_SPECTRUM_MAX_BRIGHTNESS                         ( 120 )
+#define configAUDIO_SPECTRUM_GREEN_SWITCH_PERC                      ( 25 )
+#define configAUDIO_SPECTRUM_BLUE_SWITCH_PERC                       ( 75 )
+#define configAUDIO_SPECTRUM_NOISE_FLOOR                            ( 4 )
+
+
+/*-----------------------------------------------------------*/
 
 /* Patterns */
 typedef enum {
@@ -114,6 +123,7 @@ typedef enum {
     AUDIO_PATTERNS,
     RGB_AUDIO,
     AUDIO_MAGNITUDE_VIS,
+    SPECTRUM_ANALYZER,
     LAST_PATTERN
 } patterns_t;
 
@@ -164,14 +174,17 @@ void vFireSparks( const uint32_t usPatternCount );
 /* Create an RGB audio pattern. */
 void vRgbAudio ( const uint32_t ulPatternCount );
 
-/* Calcualte the crossfade operation. */
+/* Calculate the crossfade operation. */
 void vCrossfade( int16_t start, uint16_t len, uint8_t ramp, uint8_t R, uint8_t G,uint8_t B );
 
 /* Get some randomly colored pixels. */
 void vGetRandPix( uint8_t* ucPix, uint16_t usNumPixels );
 
-/* Create an audio train pattern. */
-void vAudioTrain( const uint32_t usPatternCount );
+/* Create an magnitude visualization pattern. */
+void vMagVisualization( const uint32_t usPatternCount );
+
+/* Spectrum analyzer  */
+void vSpectrumAnalyzer( const uint32_t ulPatternCount );
 
 /*-----------------------------------------------------------*/
 
